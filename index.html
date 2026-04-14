@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Introduction</title>
+
+<style>
+    body {
+        margin: 0;
+        background: #000;
+        color: #fff;
+        font-family: Consolas, monospace;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        overflow: hidden;
+    }
+
+    .container {
+        text-align: left;
+        max-width: 700px;
+        opacity: 0;
+        animation: fadeIn 1s forwards;
+    }
+
+    h1 {
+        font-size: 18px;
+        margin-bottom: 20px;
+    }
+
+    p {
+        font-size: 14px;
+        line-height: 1.6;
+        margin-bottom: 30px;
+    }
+
+    .btn {
+        font-family: Consolas, monospace;
+        font-size: 14px;
+        padding: 10px 20px;
+        border-radius: 10px;
+        border: 1px solid rgba(255,255,255,0.3);
+        background: rgba(255,255,255,0.15);
+        backdrop-filter: blur(10px);
+        color: white;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn:hover {
+        background: rgba(255,255,255,0.25);
+        border-color: rgba(255,255,255,0.6);
+    }
+
+    @keyframes fadeIn {
+        to { opacity: 1; }
+    }
+
+    .fade-out {
+        animation: fadeOut 3s forwards;
+    }
+
+    @keyframes fadeOut {
+        to { opacity: 0; }
+    }
+</style>
+</head>
+
+<body>
+
+<div class="container" id="main">
+    <h1>Welcome to AT Box</h1>
+
+    <p>
+        AT Box is a browser-based operating system simulation designed to replicate the look and behavior of a real desktop environment. It combines visual elements, system logic, and interactive components to create an experience similar to using an actual computer. The project focuses on realism, including boot sequences, system modes, applications, and recovery tools. It is built to demonstrate how an operating system works at a conceptual level while remaining lightweight and accessible through a web browser. (AT Box v13.1)
+    </p>
+
+    <button class="btn" onclick="startATBox()">Start Debugging!</button>
+</div>
+
+<script>
+function startATBox() {
+    const main = document.getElementById("main");
+
+    // start fade out
+    main.classList.add("fade-out");
+
+    // after 3 seconds, redirect
+    setTimeout(() => {
+        window.location.href = "atbox.html";
+    }, 3000);
+}
+</script>
+
+</body>
+</html>
