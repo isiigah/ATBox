@@ -712,6 +712,7 @@ html, body {
     overflow: hidden;
     border-radius: 8px 8px 6px 6px;
     backdrop-filter: blur(14px) saturate(130%);
+    will-change: transform;
 }
 
 .window-template {
@@ -1464,6 +1465,14 @@ textarea {
     font-size: 14px;
     line-height: 1.8;
 }
+
+.atiexi-tab button {
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 14px;
+    color: #000;
+}
 </style>
 </head>
 
@@ -1632,7 +1641,13 @@ prepaired for testing purposes, THIS IS NOT AN OFFICIAL RELEASE||
     <div class="icon" data-app="imageviewer" ondblclick="openApp('imageviewer')"><span class="icon-img">🖼️</span><span class="icon-label">ImageViewer.exe</span></div>
     <div class="icon" data-app="themes" ondblclick="openApp('themes')"><span class="icon-img">🎨</span><span class="icon-label">Themes.exe</span></div>
 
-    <!-- 🎮 NEW APP -->
+    <!-- � NEW APP -->
+    <div class="icon" data-app="atiexi" ondblclick="openApp('atiexi')">
+        <span class="icon-img">🌐</span>
+        <span class="icon-label">AT Iexi.exe</span>
+    </div>
+
+    <!-- �🎮 NEW APP -->
     <div class="icon" data-app="app-atgamemedia" ondblclick="openApp('app-atgamemedia')">
         <span class="icon-img">🎮</span>
         <span class="icon-label">AT Game Media</span>
@@ -1676,6 +1691,10 @@ prepaired for testing purposes, THIS IS NOT AN OFFICIAL RELEASE||
         <div class="menu-item" data-app="themes" onclick="openApp('themes'); closeStartMenu();">
             <span class="menu-item-icon">🖼️</span>
             <span>Themes</span>
+        </div>
+        <div class="menu-item" data-app="atiexi" onclick="openApp('atiexi'); closeStartMenu();">
+            <span class="menu-item-icon">🌐</span>
+            <span>AT Iexi</span>
         </div>
     </div>
 
@@ -2173,6 +2192,37 @@ Explorer
     <div style="padding:4px;cursor:pointer;" onclick="contextEditFile()">Open</div>
     <div style="padding:4px;cursor:pointer;" onclick="contextRenameItem()">Rename</div>
     <div style="padding:4px;cursor:pointer;" onclick="contextDeleteItem()">Delete</div>
+</div>
+
+<div id="atiexi" data-app-id="atiexi" data-template="true" class="window window-template" style="width:800px;height:600px;">
+<div class="titlebar" onmousedown="dragStart(event,this.parentElement)">
+AT Iexi
+<div class="win-btns">
+<div class="btn" onclick="minimize(this)">_</div>
+<div class="btn" onclick="maximize(this)">□</div>
+<div class="btn" onclick="closeWin(this)">X</div>
+</div>
+</div>
+<div class="content" style="padding:0;display:flex;flex-direction:column;background:#fff;color:#000;font-family:Arial,sans-serif;">
+    <!-- Navigation bar -->
+    <div style="display:flex;align-items:center;padding:4px 8px;border-bottom:1px solid #ccc;background:#f0f0f0;">
+        <button onclick="atiexiBack(this)" style="padding:2px 6px;margin-right:2px;">←</button>
+        <button onclick="atiexiForward(this)" style="padding:2px 6px;margin-right:8px;">→</button>
+        <button onclick="atiexiRefresh(this)" style="padding:2px 6px;margin-right:8px;">↻</button>
+        <button onclick="atiexiHome(this)" style="padding:2px 6px;margin-right:8px;">🏠</button>
+        <input type="text" data-role="atiexi-url" style="flex:1;padding:2px 4px;border:1px solid #ccc;" placeholder="Enter URL or search">
+        <button onclick="atiexiGo(this)" style="padding:2px 6px;margin-left:4px;">Go</button>
+    </div>
+    <!-- Tab bar -->
+    <div data-role="atiexi-tabs" style="display:flex;border-bottom:1px solid #ccc;background:#f0f0f0;">
+        <button onclick="atiexiNewTab(this)" style="padding:4px 8px;border:none;background:#f0f0f0;cursor:pointer;">+</button>
+    </div>
+    <!-- Content area -->
+    <div style="flex:1;position:relative;">
+        <iframe data-role="atiexi-iframe" tabindex="-1" style="width:100%;height:100%;border:none;" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+    </div>
+</div>
+<div class="resizer"></div>
 </div>
 
 <div id="systemDialogOverlay">
@@ -3333,11 +3383,12 @@ function explorerNavSidebar(el, folderName) {
     renderExplorer(win || undefined);
 }
 
-const APP_TEMPLATE_IDS = ["atguide", "guide", "notepad", "cmd", "calc", "paint", "imageviewer", "explorer", "app-atgamemedia", "pong-window", "skansak-window", "tetris-window", "themes"];
+const APP_TEMPLATE_IDS = ["atguide", "guide", "notepad", "cmd", "calc", "paint", "imageviewer", "explorer", "app-atgamemedia", "pong-window", "skansak-window", "tetris-window", "themes", "atiexi"];
 const explorerStates = new WeakMap();
 const notepadStates = new WeakMap();
 const cmdStates = new WeakMap();
 const paintStates = new WeakMap();
+const atiexiStates = new WeakMap();
 const imageViewerStates = new WeakMap();
 const explorerView = null;
 
@@ -3446,7 +3497,8 @@ const APP_LABELS = {
     "app-atgamemedia": "AT Game Media",
     "pong-window": "Pong",
     "skansak-window": "SkanSak",
-    "tetris-window": "Tetris"
+    "tetris-window": "Tetris",
+    atiexi: "AT Iexi"
 };
 
 const TASKBAR_ICONS = {
@@ -3462,7 +3514,8 @@ const TASKBAR_ICONS = {
     "app-atgamemedia": () => String.fromCodePoint(0x1F3AE),
     "pong-window": () => String.fromCodePoint(0x1F3F8),
     "skansak-window": () => String.fromCodePoint(0x1F40D),
-    "tetris-window": () => String.fromCodePoint(0x1F9F1)
+    "tetris-window": () => String.fromCodePoint(0x1F9F1),
+    atiexi: () => String.fromCodePoint(0x1F310)
 };
 
 const safeText = document.getElementById("safeModeText");
@@ -4793,6 +4846,20 @@ function getExplorerState(win) {
     return state;
 }
 
+function getAtiexiState(win) {
+    let state = atiexiStates.get(win);
+
+    if (!state) {
+        state = {
+            tabs: [],
+            activeTabIndex: 0
+        };
+        atiexiStates.set(win, state);
+    }
+
+    return state;
+}
+
 function getFolderContentsFromTree(tree, path = []) {
     if (!Array.isArray(path) || path.length === 0) {
         return tree;
@@ -4997,6 +5064,38 @@ function initializeExplorerWindow(win, options = {}) {
     renderExplorer(win);
 }
 
+function initializeAtiexiWindow(win, options = {}) {
+    const state = getAtiexiState(win);
+    const iframe = getRoleElement(win, "atiexi-iframe");
+    const urlInput = getRoleElement(win, "atiexi-url");
+    const tabsContainer = getRoleElement(win, "atiexi-tabs");
+
+    // Initialize with default tab
+    if (state.tabs.length === 0) {
+        atiexiNewTabInternal(win);
+    }
+
+    // Bind URL input
+    if (urlInput && urlInput.dataset.bound !== "true") {
+        urlInput.dataset.bound = "true";
+        urlInput.addEventListener("keypress", e => {
+            if (e.key === "Enter") {
+                atiexiGo(urlInput);
+            }
+        });
+    }
+
+    // Bind iframe load
+    if (iframe && iframe.dataset.bound !== "true") {
+        iframe.dataset.bound = "true";
+        iframe.addEventListener("load", () => {
+            atiexiOnIframeLoad(win);
+        });
+    }
+
+    atiexiUpdateUI(win);
+}
+
 function initializeAppWindow(win, id, options = {}) {
     if (!win) return;
 
@@ -5023,6 +5122,9 @@ function initializeAppWindow(win, id, options = {}) {
             break;
         case "explorer":
             initializeExplorerWindow(win, options);
+            break;
+        case "atiexi":
+            initializeAtiexiWindow(win, options);
             break;
     }
 }
@@ -5064,24 +5166,35 @@ function openApp(id, options = {}){
 }
 
 // drag system
-let active=null,offX=0,offY=0;
+let active=null,offX=0,offY=0,initialLeft=0,initialTop=0,currentDx=0,currentDy=0;
 
 function dragStart(e,win){
     if (easterEggLockActive) return;
     if(!e.target.classList.contains('resizer')) {
         active=win;
-        offX=e.clientX-win.offsetLeft;
-        offY=e.clientY-win.offsetTop;
+        active.style.transform = '';
+        initialLeft = active.offsetLeft;
+        initialTop = active.offsetTop;
+        currentDx = 0;
+        currentDy = 0;
+        offX = e.clientX - initialLeft;
+        offY = e.clientY - initialTop;
         win.style.zIndex=++z;
         document.onmousemove=dragMove;
-        document.onmouseup=()=>active=null;
+        document.onmouseup=()=>{
+            active.style.left = (initialLeft + currentDx) + 'px';
+            active.style.top = (initialTop + currentDy) + 'px';
+            active.style.transform = '';
+            active=null;
+        };
     }
 }
 
 function dragMove(e){
     if(!active) return;
-    active.style.left=(e.clientX-offX)+"px";
-    active.style.top=(e.clientY-offY)+"px";
+    currentDx = e.clientX - offX - initialLeft;
+    currentDy = e.clientY - offY - initialTop;
+    active.style.transform = `translate(${currentDx}px, ${currentDy}px)`;
 }
 
 // window resize
@@ -7214,6 +7327,245 @@ function setTaskbarMode(small) {
         root.style.setProperty('--taskbar-height', '46px');
         root.style.setProperty('--taskbar-safe-zone', '46px');
     }
+}
+
+function atiexiNewTabInternal(win) {
+    const state = getAtiexiState(win);
+    const tab = {
+        title: "New Tab",
+        url: "",
+        history: [],
+        historyIndex: -1
+    };
+    state.tabs.push(tab);
+    state.activeTabIndex = state.tabs.length - 1;
+    atiexiLoadPage(win, "data:text/html," + encodeURIComponent(getAtiexiHomePage()));
+}
+
+function atiexiNewTab(button) {
+    const win = button.closest('.window');
+    atiexiNewTabInternal(win);
+    atiexiUpdateUI(win);
+}
+
+function atiexiCloseTab(win, index) {
+    const state = getAtiexiState(win);
+    if (state.tabs.length <= 1) return; // Keep at least one tab
+    state.tabs.splice(index, 1);
+    if (state.activeTabIndex >= state.tabs.length) {
+        state.activeTabIndex = state.tabs.length - 1;
+    }
+    atiexiUpdateUI(win);
+}
+
+function atiexiSwitchTab(win, index) {
+    const state = getAtiexiState(win);
+    state.activeTabIndex = index;
+    atiexiUpdateUI(win);
+}
+
+function atiexiUpdateUI(win) {
+    const state = getAtiexiState(win);
+    const tabsContainer = getRoleElement(win, "atiexi-tabs");
+    const iframe = getRoleElement(win, "atiexi-iframe");
+    const urlInput = getRoleElement(win, "atiexi-url");
+
+    if (!tabsContainer || !iframe || !urlInput) return;
+
+    // Clear tabs
+    const tabButtons = tabsContainer.querySelectorAll('.atiexi-tab');
+    tabButtons.forEach(btn => btn.remove());
+
+    // Add tabs
+    state.tabs.forEach((tab, index) => {
+        const tabBtn = document.createElement('div');
+        tabBtn.className = 'atiexi-tab';
+        tabBtn.style.cssText = 'display:flex;align-items:center;padding:4px 8px;border-right:1px solid #ccc;cursor:pointer;background:#fff;' + (index === state.activeTabIndex ? 'background:#e0e0e0;' : '');
+        tabBtn.innerHTML = `<span>${tab.title}</span><button onclick="atiexiCloseTab(this.closest('.window'), ${index})" style="margin-left:8px;padding:0 4px;">×</button>`;
+        tabBtn.onclick = (e) => {
+            if (e.target.tagName !== 'BUTTON') {
+                atiexiSwitchTab(win, index);
+            }
+        };
+        tabsContainer.appendChild(tabBtn);
+    });
+
+    // Update URL and iframe
+    const activeTab = state.tabs[state.activeTabIndex];
+    if (activeTab) {
+        urlInput.value = activeTab.url;
+        if (iframe.src !== activeTab.url) {
+            iframe.src = activeTab.url;
+        }
+    }
+}
+
+function atiexiGo(button) {
+    const win = button.closest('.window');
+    const urlInput = getRoleElement(win, "atiexi-url");
+    if (!urlInput) return;
+    let url = urlInput.value.trim();
+    if (!url) return;
+
+    // Add https if missing
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        if (url.includes('.') || url.includes(' ')) {
+            // Assume it's a search or URL without protocol
+            if (url.includes(' ')) {
+                // Search
+                url = 'https://www.google.com/search?q=' + encodeURIComponent(url);
+            } else {
+                // URL
+                url = 'https://' + url;
+            }
+        } else {
+            // Search
+            url = 'https://www.google.com/search?q=' + encodeURIComponent(url);
+        }
+    }
+
+    atiexiLoadPage(win, url);
+}
+
+function atiexiLoadPage(win, url) {
+    const state = getAtiexiState(win);
+    const activeTab = state.tabs[state.activeTabIndex];
+    if (!activeTab) return;
+
+    // Add to history
+    if (activeTab.historyIndex < activeTab.history.length - 1) {
+        activeTab.history = activeTab.history.slice(0, activeTab.historyIndex + 1);
+    }
+    activeTab.history.push(url);
+    activeTab.historyIndex = activeTab.history.length - 1;
+    activeTab.url = url;
+
+    const iframe = getRoleElement(win, "atiexi-iframe");
+    if (iframe) {
+        iframe.src = url;
+        // Fallback timeout in case load event doesn't fire
+        setTimeout(() => {
+            if (activeTab.url === url) {
+                atiexiOnIframeLoad(win);
+            }
+        }, 5000);
+    }
+    atiexiUpdateUI(win);
+}
+
+function atiexiBack(button) {
+    const win = button.closest('.window');
+    const state = getAtiexiState(win);
+    const activeTab = state.tabs[state.activeTabIndex];
+    if (!activeTab || activeTab.historyIndex <= 0) return;
+
+    activeTab.historyIndex--;
+    activeTab.url = activeTab.history[activeTab.historyIndex];
+    atiexiUpdateUI(win);
+}
+
+function atiexiForward(button) {
+    const win = button.closest('.window');
+    const state = getAtiexiState(win);
+    const activeTab = state.tabs[state.activeTabIndex];
+    if (!activeTab || activeTab.historyIndex >= activeTab.history.length - 1) return;
+
+    activeTab.historyIndex++;
+    activeTab.url = activeTab.history[activeTab.historyIndex];
+    atiexiUpdateUI(win);
+}
+
+function atiexiRefresh(button) {
+    const win = button.closest('.window');
+    const iframe = getRoleElement(win, "atiexi-iframe");
+    if (iframe) {
+        iframe.src = iframe.src;
+    }
+}
+
+function atiexiHome(button) {
+    const win = button.closest('.window');
+    atiexiLoadPage(win, "data:text/html," + encodeURIComponent(getAtiexiHomePage()));
+}
+
+function atiexiOnIframeLoad(win) {
+    const iframe = getRoleElement(win, "atiexi-iframe");
+    const urlInput = getRoleElement(win, "atiexi-url");
+    const state = getAtiexiState(win);
+    const activeTab = state.tabs[state.activeTabIndex];
+    if (!iframe || !activeTab || !urlInput) return;
+
+    // Update URL bar
+    urlInput.value = iframe.src;
+
+    // Update history if URL changed
+    if (activeTab.url !== iframe.src) {
+        activeTab.url = iframe.src;
+        // Add to history if not already there
+        if (activeTab.history[activeTab.historyIndex] !== iframe.src) {
+            if (activeTab.historyIndex < activeTab.history.length - 1) {
+                activeTab.history = activeTab.history.slice(0, activeTab.historyIndex + 1);
+            }
+            activeTab.history.push(iframe.src);
+            activeTab.historyIndex = activeTab.history.length - 1;
+        }
+    }
+
+    try {
+        const title = iframe.contentDocument?.title || "Untitled";
+        activeTab.title = title;
+        atiexiUpdateUI(win);
+    } catch (e) {
+        // Cross-origin, can't access title
+        activeTab.title = "Untitled";
+        atiexiUpdateUI(win);
+    }
+}
+
+function getAtiexiHomePage() {
+    return `<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to AT Iexi</title>
+<style>
+body { font-family: Arial, sans-serif; margin: 20px; background: #fff; color: #000; }
+h1 { color: #000; }
+a { color: #0000ff; text-decoration: none; }
+a:hover { text-decoration: underline; }
+.quick-links { display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0; }
+.quick-link { padding: 10px; border: 1px solid #ccc; background: #f0f0f0; cursor: pointer; }
+.quick-link:hover { background: #e0e0e0; }
+</style>
+</head>
+<body>
+<h1>Welcome to AT Iexi - the most barebones browser</h1>
+<p>This is not being controlled by a browser engine. Instead, it is using the browser engine that is already built into the system running this application.</p>
+<p>This browser is lightweight, experimental, and runs entirely inside a web environment using iframe-based rendering.</p>
+<p>Some websites may not load due to browser security restrictions. For best results, use iframe-compatible websites listed below.</p>
+<h2>Recommended websites:</h2>
+<ul>
+<li><a href="https://www.wikipedia.org">Wikipedia</a></li>
+<li><a href="https://www.wiktionary.org">Wiktionary</a></li>
+<li><a href="https://www.wikisource.org">Wikisource</a></li>
+<li><a href="https://www.wikibooks.org">Wikibooks</a></li>
+<li><a href="https://archive.org">Internet Archive</a></li>
+<li><a href="https://www.openstreetmap.org">OpenStreetMap</a></li>
+<li><a href="https://developer.mozilla.org">MDN Web Docs</a></li>
+<li><a href="https://stackoverflow.com">Stack Overflow</a></li>
+<li><a href="https://codepen.io">CodePen</a></li>
+<li><a href="https://jsfiddle.net">JSFiddle</a></li>
+<li><a href="https://example.com">Example Domain (testing)</a></li>
+</ul>
+<h2>Quick access buttons:</h2>
+<div class="quick-links">
+<a href="https://www.wikipedia.org" class="quick-link">Wikipedia</a>
+<a href="https://www.openstreetmap.org" class="quick-link">OpenStreetMap</a>
+<a href="https://developer.mozilla.org" class="quick-link">MDN Web Docs</a>
+<a href="https://archive.org" class="quick-link">Internet Archive</a>
+<a href="https://example.com" class="quick-link">Example Domain</a>
+</div>
+</body>
+</html>`;
 }
 
 </script>
