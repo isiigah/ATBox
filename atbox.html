@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -111,11 +111,7 @@ html, body {
     z-index: 10;
 }
 
-#loginUser:focus {
-    outline: none;
-    border-color: var(--accent);
-    box-shadow: 0 0 6px var(--accent-glow);
-}
+/* loginUser focus handled by .login-input class */
 
 .desktop {
     position: fixed;
@@ -1489,7 +1485,7 @@ textarea {
         </div>
     </div>
 
-    <div class="text">AT Corporation™ 1.0.1</div>
+    <div class="text">© 2026 - AT Box Systems</div>
 </div>
 
 <div id="safeModeBootScreen" style="display:none;position:fixed;inset:0;background:#000000;z-index:99999;font-family:Consolas,monospace;">
@@ -1575,54 +1571,308 @@ prepaired for testing purposes, THIS IS NOT AN OFFICIAL RELEASE||
     </div>
 </div>
 
-<div id="loginScreen" style="
+<!-- ===== OOBE SCREEN ===== -->
+<div id="oobeScreen" style="
     position:fixed;
     inset:0;
-    background:black;
+    z-index:10000;
     display:none;
-    z-index:9999;
-    color:#ccc;
-    font-family:Consolas;
+    background-image: url('assets/oobewl.png');
+    background-size: cover;
+    background-position: center;
+    font-family: Consolas, monospace;
 ">
+<style>
+#oobeScreen * { box-sizing: border-box; }
 
-    <div style="
-        position:absolute;
-        top:50%;
-        left:50%;
-        transform:translate(-50%,-50%);
-        text-align:center;
+.oobe-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
 
-        display:flex;
-        flex-direction:column;
-        align-items:center;
-        gap:14px;
-    ">
+.oobe-panel {
+    width: min(580px, 92vw);
+    padding: 38px 44px 32px;
+    background: transparent;
+    color: #f0f0f0;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    animation: oobeFadeIn 0.7s ease forwards;
+}
 
-        <!-- Title -->
-        <div style="font-size:24px;">Welcome</div>
+@keyframes oobeFadeIn {
+    from { opacity: 0; transform: translateY(18px); }
+    to { opacity: 1; transform: translateY(0); }
+}
 
-        <!-- Sub title -->
-        <div style="font-size:14px; color:#888;">AT Box</div>
+.oobe-step { display: none; flex-direction: column; gap: 18px; }
+.oobe-step.active { display: flex; animation: oobeFadeIn 0.5s ease forwards; }
 
-        <!-- Username -->
-        <input id="loginUser" placeholder="Enter Username" style="
-            padding:10px;
-            width:220px;
-            background:#111;
-            border:1px solid #444;
-            color:white;
-            text-align:center;
-        ">
+.oobe-header-icon {
+    font-family: Consolas, monospace;
+    font-size: 20px;
+    color: #ff4444;
+    text-shadow: 0 0 12px rgba(255,50,50,0.7);
+    margin-bottom: 2px;
+}
 
-        <!-- Login button -->
-        <button onclick="login()" style="
-            padding:8px 28px;
-            background:var(--accent);
-            color:white;
-            border:none;
-            cursor:pointer;
-        ">Login</button>
+.oobe-title {
+    font-family: Consolas, monospace;
+    font-size: 20px;
+    color: #ffffff;
+    font-weight: bold;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+    border-bottom: 1px solid rgba(255,60,60,0.35);
+    padding-bottom: 12px;
+}
+
+.oobe-body {
+    font-size: 13px;
+    color: #ccc;
+    line-height: 1.65;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.9);
+}
+
+.oobe-input {
+    padding: 10px 14px;
+    background: rgba(0,0,0,0.45);
+    border: 1px solid rgba(255,60,60,0.4);
+    border-radius: 6px;
+    color: #f0f0f0;
+    font-family: Consolas, monospace;
+    font-size: 13px;
+    width: 100%;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.oobe-input:focus {
+    border-color: rgba(255,60,60,0.8);
+    box-shadow: 0 0 10px rgba(255,40,40,0.3);
+}
+.oobe-input::placeholder { color: #777; }
+
+.oobe-error {
+    color: #ff6666;
+    font-size: 12px;
+    font-family: Consolas, monospace;
+    display: none;
+    text-shadow: 0 0 6px rgba(255,50,50,0.5);
+}
+
+.oobe-footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 8px;
+}
+
+.oobe-btn {
+    padding: 9px 28px;
+    background: linear-gradient(to bottom,
+        rgba(220,60,60,0.75) 0%,
+        rgba(160,20,20,0.80) 55%,
+        rgba(100,5,5,0.85) 100%
+    );
+    border: 1px solid rgba(255,80,80,0.55);
+    border-radius: 6px;
+    color: #111;
+    font-family: Consolas, monospace;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.3),
+        0 0 14px rgba(255,40,40,0.35),
+        0 3px 10px rgba(0,0,0,0.5);
+    transition: filter 0.2s, transform 0.15s, box-shadow 0.2s;
+    text-shadow: none;
+}
+.oobe-btn:hover {
+    filter: brightness(1.15);
+    transform: translateY(-1px);
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.35),
+        0 0 22px rgba(255,60,60,0.5),
+        0 5px 14px rgba(0,0,0,0.55);
+}
+.oobe-btn:active { transform: scale(0.97); filter: brightness(0.95); }
+
+/* --- LOGIN SCREEN (Vista-style) --- */
+#loginScreen {
+    position: fixed;
+    inset: 0;
+    background-image: url('assets/oobewl.png');
+    background-size: cover;
+    background-position: center;
+    display: none;
+    z-index: 9999;
+    font-family: Consolas, monospace;
+    align-items: center;
+    justify-content: center;
+}
+
+.login-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 40px 48px 36px;
+    background: transparent;
+    animation: oobeFadeIn 0.6s ease forwards;
+}
+
+.login-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(200,30,30,0.7), rgba(80,0,0,0.8));
+    border: 2px solid rgba(255,80,80,0.5);
+    box-shadow: 0 0 24px rgba(255,40,40,0.4), 0 4px 16px rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    color: #fff;
+}
+
+.login-username-label {
+    font-family: Consolas, monospace;
+    font-size: 18px;
+    color: #ffffff;
+    font-weight: bold;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.9), 0 0 20px rgba(255,40,40,0.3);
+    letter-spacing: 0.5px;
+}
+
+.login-input {
+    padding: 10px 16px;
+    width: 240px;
+    background: rgba(0,0,0,0.45);
+    border: 1px solid rgba(255,60,60,0.45);
+    border-radius: 6px;
+    color: #f0f0f0;
+    font-family: Consolas, monospace;
+    font-size: 13px;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.login-input:focus {
+    border-color: rgba(255,80,80,0.85);
+    box-shadow: 0 0 12px rgba(255,40,40,0.35);
+}
+
+.login-btn {
+    padding: 9px 36px;
+    background: linear-gradient(to bottom,
+        rgba(220,60,60,0.78) 0%,
+        rgba(160,20,20,0.82) 55%,
+        rgba(100,5,5,0.88) 100%
+    );
+    border: 1px solid rgba(255,80,80,0.5);
+    border-radius: 6px;
+    color: #111;
+    font-family: Consolas, monospace;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.3),
+        0 0 16px rgba(255,40,40,0.35),
+        0 3px 10px rgba(0,0,0,0.55);
+    transition: filter 0.18s, transform 0.14s;
+}
+.login-btn:hover { filter: brightness(1.15); transform: translateY(-1px); }
+.login-btn:active { transform: scale(0.97); }
+
+.login-error {
+    color: #ff6666;
+    font-size: 12px;
+    font-family: Consolas, monospace;
+    display: none;
+    text-shadow: 0 0 6px rgba(255,50,50,0.5);
+}
+
+.login-divider {
+    width: 240px;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(255,60,60,0.4), transparent);
+}
+</style>
+
+<div class="oobe-overlay">
+    <div class="oobe-panel">
+
+        <!-- STEP 1: Welcome -->
+        <div class="oobe-step active" id="oobeStep1">
+            <div class="oobe-header-icon">Welcome!</div>
+            <div class="oobe-title">Welcome to AT Box</div>
+            <div class="oobe-body">
+                AT Box is a lightweight, browser-based operating environment designed to simulate a desktop experience using pure web technologies. It focuses on simplicity, flexibility, and performance while offering a familiar interface inspired by classic operating systems.<br><br>
+                This setup will guide you through a few quick steps to personalize your experience.
+            </div>
+            <div class="oobe-footer">
+                <button class="oobe-btn" onclick="oobeNext(1)">Next!</button>
+            </div>
+        </div>
+
+        <!-- STEP 2: Username -->
+        <div class="oobe-step" id="oobeStep2">
+            <div class="oobe-title">Add a username</div>
+            <div class="oobe-body">
+                You can add a username or skip this step to assign a default username named "ATBoxUser".
+            </div>
+            <input class="oobe-input" id="oobeUsername" type="text" placeholder="Enter username (optional)">
+            <div class="oobe-footer">
+                <button class="oobe-btn" onclick="oobeNext(2)">Next!</button>
+            </div>
+        </div>
+
+        <!-- STEP 3: Password -->
+        <div class="oobe-step" id="oobeStep3">
+            <div class="oobe-title">Create a password</div>
+            <div class="oobe-body">
+                Create a password to secure your AT Box environment. You can also skip this step if you prefer not to use a password.
+            </div>
+            <input class="oobe-input" id="oobePassword" type="password" placeholder="Password (optional)">
+            <input class="oobe-input" id="oobePasswordConfirm" type="password" placeholder="Confirm password">
+            <div class="oobe-error" id="oobePassError">Passwords do not match. Please try again.</div>
+            <div class="oobe-footer">
+                <button class="oobe-btn" onclick="oobeNext(3)">Next!</button>
+            </div>
+        </div>
+
+        <!-- STEP 4: Done -->
+        <div class="oobe-step" id="oobeStep4">
+            <div class="oobe-title">Thank You!</div>
+            <div class="oobe-body">
+                Thank you for completing the OOBE setup. Your AT Box environment is now ready.<br><br>
+                You can continue to the login screen.
+            </div>
+            <div class="oobe-footer">
+                <button class="oobe-btn" onclick="oobeFinish()">Continue</button>
+            </div>
+        </div>
+
     </div>
+</div>
+</div>
+
+<!-- ===== LOGIN SCREEN (Vista-style) ===== -->
+<div id="loginScreen" style="display:none;">
+<div class="login-panel" id="loginPanel">
+    <div class="login-avatar">👤</div>
+    <div class="login-username-label" id="loginUsernameLabel">ATBoxUser</div>
+    <div class="login-divider"></div>
+    <div id="loginPasswordWrap" style="display:none; flex-direction:column; align-items:center; gap:10px;">
+        <input class="login-input" id="loginUser" type="password" placeholder="Password">
+    </div>
+    <div class="login-error" id="loginError">Incorrect password. Please try again.</div>
+    <button class="login-btn" onclick="login()">Log in →</button>
+</div>
 </div>
 
 <div id="desktop" class="desktop">
@@ -1640,6 +1890,7 @@ prepaired for testing purposes, THIS IS NOT AN OFFICIAL RELEASE||
     <div class="icon" data-app="paint" ondblclick="openApp('paint')"><span class="icon-img">🎨</span><span class="icon-label">Paint.exe</span></div>
     <div class="icon" data-app="imageviewer" ondblclick="openApp('imageviewer')"><span class="icon-img">🖼️</span><span class="icon-label">ImageViewer.exe</span></div>
     <div class="icon" data-app="themes" ondblclick="openApp('themes')"><span class="icon-img">🎨</span><span class="icon-label">Themes.exe</span></div>
+    <div class="icon" data-app="sandbox" ondblclick="openApp('sandbox')"><span class="icon-img">🐳</span><span class="icon-label">Sandbox.exe</span></div>
 
     <!-- � NEW APP -->
     <div class="icon" data-app="atiexi" ondblclick="openApp('atiexi')">
@@ -1691,6 +1942,10 @@ prepaired for testing purposes, THIS IS NOT AN OFFICIAL RELEASE||
         <div class="menu-item" data-app="themes" onclick="openApp('themes'); closeStartMenu();">
             <span class="menu-item-icon">🖼️</span>
             <span>Themes</span>
+        </div>
+        <div class="menu-item" data-app="sandbox" onclick="openApp('sandbox'); closeStartMenu();">
+            <span class="menu-item-icon">🐳</span>
+            <span>Sandbox</span>
         </div>
         <div class="menu-item" data-app="atiexi" onclick="openApp('atiexi'); closeStartMenu();">
             <span class="menu-item-icon">🌐</span>
@@ -4379,17 +4634,99 @@ function showStartupTarget() {
 
     hideDiagnosticsScreen();
 
+    const oobeCompleted = localStorage.getItem("atbox_oobe_completed");
+
+    if (!oobeCompleted) {
+        const oobeScreen = document.getElementById("oobeScreen");
+        if (oobeScreen) {
+            oobeScreen.style.display = "block";
+            oobeScreen.style.opacity = "0";
+            setTimeout(() => {
+                oobeScreen.style.transition = "opacity 0.8s";
+                oobeScreen.style.opacity = "1";
+            }, 1000);
+        }
+    } else {
+        showLoginScreen();
+    }
+}
+
+function showLoginScreen() {
     const loginScreen = document.getElementById("loginScreen");
-    const input = document.getElementById("loginUser");
+    const storedUser = localStorage.getItem("atbox_username") || "ATBoxUser";
+    const storedPass = localStorage.getItem("atbox_password") || "";
+
+    const label = document.getElementById("loginUsernameLabel");
+    if (label) label.textContent = storedUser;
+
+    const passWrap = document.getElementById("loginPasswordWrap");
+    if (passWrap) passWrap.style.display = storedPass ? "flex" : "none";
 
     if (loginScreen) {
-        loginScreen.style.display = "block";
+        loginScreen.style.display = "flex";
         loginScreen.style.opacity = "1";
     }
 
-    if (input) {
+    const pwInput = document.getElementById("loginUser");
+    if (pwInput && storedPass) {
         bindLoginInput();
-        input.focus();
+        pwInput.focus();
+    }
+}
+
+function oobeNext(step) {
+    if (step === 2) {
+        const uname = document.getElementById("oobeUsername").value.trim();
+        localStorage.setItem("atbox_username", uname || "ATBoxUser");
+    } else if (step === 3) {
+        const pw = document.getElementById("oobePassword").value;
+        const pw2 = document.getElementById("oobePasswordConfirm").value;
+        const errEl = document.getElementById("oobePassError");
+        if (pw !== pw2) { errEl.style.display = "block"; return; }
+        errEl.style.display = "none";
+        localStorage.setItem("atbox_password", pw || "");
+    }
+
+    const current = document.getElementById("oobeStep" + step);
+    const next = document.getElementById("oobeStep" + (step + 1));
+    if (!next) return;
+
+    if (current) {
+        current.style.transition = "opacity 0.3s";
+        current.style.opacity = "0";
+        setTimeout(() => {
+            current.classList.remove("active");
+            current.style.opacity = "";
+            next.classList.add("active");
+        }, 300);
+    } else {
+        next.classList.add("active");
+    }
+}
+
+function oobeFinish() {
+    localStorage.setItem("atbox_oobe_completed", "true");
+    const oobeScreen = document.getElementById("oobeScreen");
+    if (oobeScreen) {
+        oobeScreen.style.transition = "opacity 0.7s";
+        oobeScreen.style.opacity = "0";
+        setTimeout(() => {
+            oobeScreen.style.display = "none";
+            const black = document.getElementById("shutdownScreen");
+            if (black) {
+                black.style.display = "block";
+                black.style.background = "black";
+                black.style.opacity = "1";
+            }
+            setTimeout(() => {
+                if (black) {
+                    black.style.transition = "opacity 0.7s";
+                    black.style.opacity = "0";
+                    setTimeout(() => { black.style.display = "none"; }, 700);
+                }
+                showLoginScreen();
+            }, 4000);
+        }, 700);
     }
 }
 
@@ -4627,8 +4964,21 @@ function playStartupSound() {
 }
 
 function login() {
-
+    const storedPass = localStorage.getItem("atbox_password") || "";
     const loginEl = document.getElementById("loginScreen");
+    const errEl = document.getElementById("loginError");
+
+    // Validate password if one is set
+    if (storedPass) {
+        const input = document.getElementById("loginUser");
+        const entered = input ? input.value : "";
+        if (entered !== storedPass) {
+            if (errEl) { errEl.style.display = "block"; }
+            if (input) { input.value = ""; input.focus(); }
+            return;
+        }
+    }
+    if (errEl) errEl.style.display = "none";
 
     // fade to black
     loginEl.style.transition = "opacity 0.6s";
@@ -5168,9 +5518,22 @@ function openApp(id, options = {}){
 // drag system
 let active=null,offX=0,offY=0,initialLeft=0,initialTop=0,currentDx=0,currentDy=0;
 
+function dragStop(){
+    if (!active) return;
+    active.style.left = (initialLeft + currentDx) + 'px';
+    active.style.top = (initialTop + currentDy) + 'px';
+    active.style.transform = '';
+    active = null;
+    document.removeEventListener('mousemove', dragMove);
+    document.removeEventListener('mouseup', dragStop);
+    document.removeEventListener('mouseleave', dragStop);
+    window.removeEventListener('blur', dragStop);
+}
+
 function dragStart(e,win){
     if (easterEggLockActive) return;
     if(!e.target.classList.contains('resizer')) {
+        e.preventDefault();
         active=win;
         active.style.transform = '';
         initialLeft = active.offsetLeft;
@@ -5180,13 +5543,10 @@ function dragStart(e,win){
         offX = e.clientX - initialLeft;
         offY = e.clientY - initialTop;
         win.style.zIndex=++z;
-        document.onmousemove=dragMove;
-        document.onmouseup=()=>{
-            active.style.left = (initialLeft + currentDx) + 'px';
-            active.style.top = (initialTop + currentDy) + 'px';
-            active.style.transform = '';
-            active=null;
-        };
+        document.addEventListener('mousemove', dragMove);
+        document.addEventListener('mouseup', dragStop);
+        document.addEventListener('mouseleave', dragStop);
+        window.addEventListener('blur', dragStop);
     }
 }
 
@@ -5384,6 +5744,7 @@ const appLauncher = {
     "paint.exe": () => openApp("paint", { silent: true }),
     "calc.exe": () => openApp("calc", { silent: true }),
     "imageviewer.exe": () => openApp("imageviewer", { silent: true }),
+    "sandbox.exe": () => openApp("sandbox", { silent: true }),
 };
 
 function queueCmdConfirmation(onConfirm, win) {
@@ -7877,6 +8238,28 @@ Themes
     left: 20px;
 }
 </style>
+
+<!-- SANDBOX APP TEMPLATE -->
+<div id="sandbox" data-app-id="sandbox" data-template="true" class="window window-template" style="width:800px;height:600px;">
+<div class="titlebar" onmousedown="dragStart(event,this.parentElement)">
+Sandbox - Virtual Environment
+<div class="win-btns">
+<div class="btn" onclick="minimize(this)">_</div>
+<div class="btn" onclick="maximize(this)">□</div>
+<div class="btn" onclick="closeWin(this)">X</div>
+</div>
+</div>
+<div class="content" style="padding:0;display:flex;flex-direction:column;">
+    <div style="padding:10px;background:#111;border-bottom:1px solid #333;font-size:12px;color:#ccc;">
+        <strong>Sandbox Environment</strong> - Isolated iframe instance connecting to atbox.pages.dev
+        <div style="margin-top:5px;font-size:11px;color:#888;">
+            This creates a virtual machine-like environment within AT Box. Each sandbox is independent and can be opened infinitely.
+        </div>
+    </div>
+    <iframe src="https://atbox.pages.dev/" style="flex:1;border:none;width:100%;height:100%;background:#000;" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-pointer-lock allow-top-navigation"></iframe>
+</div>
+<div class="resizer"></div>
+</div>
 
 <script>
 // ---- THEMES APP ----
