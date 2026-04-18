@@ -1,0 +1,27 @@
+UPDATE LOGS - AT BOX v13.2
+
+[v1.13.2] - Boot Manager Rebrand (Apr 18, 2026)
+* Redesigned boot sequence with phased initialization
+* Added browser engine detection in startup sequence
+* Implemented keyboard-navigable menu system
+* Added dynamic content loading for documentation
+* Removed AT Corporation(TM) 1.0.1 [it was too cringe]
+
+[v1.13.1] - AT Iexi & OOBE (Apr 16, 2026)
+* Added browser "AT Iexi", frame-based
+* Added browsing bars to ensure user friendly experience
+* Added OOBE design to ensure a user friendly experience to a new user.
+
+These releases,
+AT-1.0
+AT-2.0
+AT-3.0
+AT-3.1
+AT 1.3.2
+AT 1.4.0
+AT 1.5
+AT 1.5.1
+...
+AT 1.12.2
+
+are those releases which are not published yet, these versions are established as "pre-release" or private versions
