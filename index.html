@@ -1,96 +1,643 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Introduction</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AT Box - Welcome!</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
 
-<style>
-    body {
-        margin: 0;
-        background: #000;
-        color: #fff;
-        font-family: Consolas, monospace;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        height: 100vh;
-        overflow: hidden;
-    }
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            color: #fff;
+            font-family: Consolas, 'Courier New', monospace;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            align-items: flex-start;
+            justify-content: flex-start;
+        }
 
-    .container {
-        text-align: left;
-        max-width: 700px;
-        opacity: 0;
-        animation: fadeIn 1s forwards;
-    }
+        .phase {
+            display: none;
+            width: 100%;
+            height: 100%;
+            padding: 20px;
+        }
 
-    h1 {
-        font-size: 18px;
-        margin-bottom: 20px;
-    }
+        .phase.active {
+            display: flex;
+            flex-direction: column;
+        }
 
-    p {
-        font-size: 14px;
-        line-height: 1.6;
-        margin-bottom: 30px;
-    }
+        /* ============ PHASE 1: CURSOR ============ */
+        #phase1 {
+            justify-content: flex-start;
+            align-items: flex-start;
+        }
 
-    .btn {
-        font-family: Consolas, monospace;
-        font-size: 14px;
-        padding: 10px 20px;
-        border-radius: 10px;
-        border: 1px solid rgba(255,255,255,0.3);
-        background: rgba(255,255,255,0.15);
-        backdrop-filter: blur(10px);
-        color: white;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
+        .cursor {
+            font-size: 12px;
+            color: #fff;
+            animation: cursorBlink 0.5s steps(2, start) infinite;
+            position: absolute;
+            top: 20px;
+            left: 20px;
+        }
 
-    .btn:hover {
-        background: rgba(255,255,255,0.25);
-        border-color: rgba(255,255,255,0.6);
-    }
+        @keyframes cursorBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
 
-    @keyframes fadeIn {
-        to { opacity: 1; }
-    }
+        /* ============ PHASE 2: ENGINE CHECK ============ */
+        #phase2 {
+            justify-content: flex-start;
+            align-items: flex-start;
+            position: relative;
+        }
 
-    .fade-out {
-        animation: fadeOut 3s forwards;
-    }
+        .crt-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.08) 0px,
+                rgba(0, 0, 0, 0.08) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+            animation: crtFlicker 0.5s ease-in-out infinite;
+        }
 
-    @keyframes fadeOut {
-        to { opacity: 0; }
-    }
-</style>
+        @keyframes crtFlicker {
+            0%, 100% { opacity: 0.95; }
+            50% { opacity: 1; }
+        }
+
+        .engine-check {
+            font-size: 18px;
+            position: relative;
+            z-index: 1;
+            margin-top: 0;
+            line-height: 1.8;
+            white-space: pre-wrap;
+        }
+
+        /* ============ PHASE 3 & 5: MENU ============ */
+        .menu-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: flex-start;
+            gap: 15px;
+            margin-top: 40px;
+        }
+
+        .menu-title {
+            font-size: 18px;
+            margin-bottom: 0px;
+            margin-top: 20px;
+        }
+
+        .menu-item {
+            font-size: 18px;
+            cursor: pointer;
+            padding: 5px 0px;
+            user-select: none;
+            transition: background-color 0.1s;
+            min-width: fit-content;
+        }
+
+        .menu-item::before {
+            content: '   ';
+            margin-right: 0;
+        }
+
+        .menu-item.selected::before {
+            content: '> ';
+            margin-right: 0;
+        }
+
+        /* ============ PHASE 4: CONTENT ============ */
+        #phase4 {
+            justify-content: flex-start;
+            overflow-y: auto;
+        }
+
+        .content-container {
+            margin-top: 40px;
+            max-width: 800px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .content-text {
+            font-size: 18px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            margin-bottom: 30px;
+        }
+
+        .back-button {
+            font-size: 18px;
+            cursor: pointer;
+            padding: 5px 10px;
+            margin-top: 20px;
+            user-select: none;
+            transition: background-color 0.1s;
+        }
+
+        .back-button:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* ============ CONFIRMATION SCREEN ============ */
+        .confirmation-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: flex-start;
+            gap: 20px;
+            margin-top: 40px;
+        }
+
+        .confirmation-text {
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+
+        /* ============ TRANSITIONS ============ */
+        @keyframes fadeToBlack {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+
+        @keyframes fadeFromBlack {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .fade-out-phase {
+            animation: fadeToBlack 0.5s forwards;
+        }
+
+        .fade-in-phase {
+            animation: fadeFromBlack 0.5s forwards;
+        }
+
+        /* ============ MOBILE RESPONSIVENESS ============ */
+        @media (max-width: 768px) {
+            .menu-title {
+                font-size: 14px;
+            }
+
+            .menu-item {
+                font-size: 14px;
+            }
+
+            .engine-check {
+                font-size: 14px;
+            }
+
+            .content-text {
+                font-size: 14px;
+            }
+
+            .confirmation-text {
+                font-size: 14px;
+            }
+
+            .back-button {
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            .phase {
+                padding: 15px;
+            }
+
+            .menu-title {
+                font-size: 12px;
+            }
+
+            .menu-item {
+                font-size: 12px;
+            }
+
+            .engine-check {
+                font-size: 12px;
+            }
+
+            .content-text {
+                font-size: 12px;
+            }
+
+            .confirmation-text {
+                font-size: 12px;
+            }
+
+            .back-button {
+                font-size: 12px;
+            }
+
+            .cursor {
+                font-size: 10px;
+            }
+        }
+    </style>
 </head>
-
 <body>
 
-<div class="container" id="main">
-    <h1>Welcome to AT Box</h1>
+<!-- PHASE 1: CURSOR ANIMATION -->
+<div id="phase1" class="phase active">
+    <div class="cursor">_</div>
+</div>
 
-    <p>
-        AT Box is a browser-based operating system simulation designed to replicate the look and behavior of a real desktop environment. It combines visual elements, system logic, and interactive components to create an experience similar to using an actual computer. The project focuses on realism, including boot sequences, system modes, applications, and recovery tools. It is built to demonstrate how an operating system works at a conceptual level while remaining lightweight and accessible through a web browser. (AT Box v13.1)
-    </p>
+<!-- PHASE 2: ENGINE CHECK -->
+<div id="phase2" class="phase">
+    <div class="crt-overlay"></div>
+    <div class="engine-check" id="engineText">Checking Website Engine...</div>
+</div>
 
-    <button class="btn" onclick="startATBox()">Start Debugging!</button>
+<!-- PHASE 3: BOOT MANAGER MENU -->
+<div id="phase3" class="phase">
+    <div style="margin-bottom: 5px;">
+        <div style="font-size: 18px; margin-bottom: 5px;">AT Box ASTITY Utility</div>
+        <div style="font-size: 18px; margin-bottom: 0px;">(C) 2026 - AT Box Systems</div>
+    </div>
+    <div class="menu-title">What would you like to do?</div>
+    <div class="menu-container" id="mainMenu">
+        <div class="menu-item" data-action="explore">Explore AT Box</div>
+        <div class="menu-item" data-action="updlog">Check Update Logs</div>
+        <div class="menu-item" data-action="credits">Credits</div>
+    </div>
+</div>
+
+<!-- PHASE 4: CONTENT DISPLAY -->
+<div id="phase4" class="phase">
+    <div class="content-container">
+        <div class="content-text" id="contentText"></div>
+    </div>
+    <div class="back-button" onclick="goBackToMenu()">Back</div>
+</div>
+
+<!-- PHASE 5: EXPLORE AT BOX SUB-MENU -->
+<div id="phase5" class="phase">
+    <div class="menu-title">Explore AT Box</div>
+    <div class="menu-container" id="exploreMenu">
+        <div class="menu-item" data-action="emulation">Start AT Emulation</div>
+        <div class="menu-item" data-action="about">About AT Box</div>
+    </div>
+    <div class="back-button" onclick="goBackToMenu()">Back</div>
+</div>
+
+<!-- PHASE 5a: EMULATION CONFIRMATION -->
+<div id="phase5a" class="phase">
+    <div class="confirmation-container">
+        <div class="confirmation-text">> Are you ready?</div>
+        <div class="menu-container" style="margin-top: 15px;" id="confirmMenu">
+            <div class="menu-item" data-action="yes">Yes :)</div>
+            <div class="menu-item" data-action="no">No</div>
+        </div>
+    </div>
 </div>
 
 <script>
-function startATBox() {
-    const main = document.getElementById("main");
+    // ============ STATE MACHINE ============
+    let currentPhase = 1;
+    let currentMenuSelection = 0;
+    let currentExploreSelection = 0;
+    let currentConfirmSelection = 0;
+    let sourcePhase = 3; // Track where content viewing came from
 
-    // start fade out
-    main.classList.add("fade-out");
+    // ============ BROWSER DETECTION ============
+    function detectBrowserEngine() {
+        const userAgent = navigator.userAgent;
+        
+        if (/Chrome|Chromium|CriOS/.test(userAgent) && !/Edge|Edg/.test(userAgent)) {
+            return 'Chromium';
+        } else if (/Safari/.test(userAgent) && !/Chrome|CriOS/.test(userAgent)) {
+            return 'WebKit';
+        } else if (/Firefox|FxiOS/.test(userAgent)) {
+            return 'Gecko';
+        } else if (/Edge|Edg/.test(userAgent)) {
+            return 'EdgeHTML';
+        } else {
+            return 'UNKNOWN';
+        }
+    }
 
-    // after 3 seconds, redirect
-    setTimeout(() => {
-        window.location.href = "atbox.html";
-    }, 3000);
-}
+    // ============ PHASE TRANSITION HELPERS ============
+    function showPhase(phaseNum) {
+        // Hide all phases
+        document.querySelectorAll('.phase').forEach(p => p.classList.remove('active'));
+        
+        // Show target phase
+        const phaseId = `phase${phaseNum}`;
+        const phaseElement = document.getElementById(phaseId);
+        if (phaseElement) {
+            phaseElement.classList.add('active');
+        }
+        
+        currentPhase = phaseNum;
+    }
+
+    function fadeToBlackThen(callback, duration = 500) {
+        const currentPhaseEl = document.querySelector('.phase.active');
+        if (currentPhaseEl) {
+            currentPhaseEl.classList.add('fade-out-phase');
+            setTimeout(() => {
+                callback();
+            }, duration);
+        } else {
+            callback();
+        }
+    }
+
+    // ============ PHASE 1: CURSOR ============
+    function initPhase1() {
+        showPhase(1);
+        
+        // After 1 second of blinking, fade to black
+        setTimeout(() => {
+            fadeToBlackThen(() => {
+                initPhase2();
+            }, 1000);
+        }, 1000);
+    }
+
+    // ============ PHASE 2: ENGINE CHECK ============
+    function initPhase2() {
+        showPhase(2);
+        const engineText = document.getElementById('engineText');
+        engineText.textContent = '> Checking Website Engine...';
+        
+        // After 3 seconds, append engine info
+        setTimeout(() => {
+            const engine = detectBrowserEngine();
+            engineText.textContent = '> Checking Website Engine...\n> WEBENGINE_' + engine;
+            
+            // Hold for 1 second, then fade to black
+            setTimeout(() => {
+                fadeToBlackThen(() => {
+                    initPhase3();
+                }, 1000);
+            }, 1000);
+        }, 3000);
+    }
+
+    // ============ PHASE 3: MAIN MENU ============
+    function initPhase3() {
+        currentPhase = 3;
+        sourcePhase = 3;
+        currentMenuSelection = 0;
+        document.querySelectorAll('.phase').forEach(p => {
+            p.classList.remove('active');
+            p.classList.remove('fade-out-phase');
+        });
+        document.getElementById('phase3').classList.add('active');
+        updateMainMenuSelection();
+        setupMenuInteraction('mainMenu');
+    }
+
+    function updateMainMenuSelection() {
+        const items = document.querySelectorAll('#mainMenu .menu-item');
+        items.forEach((item, idx) => {
+            if (idx === currentMenuSelection) {
+                item.classList.add('selected');
+            } else {
+                item.classList.remove('selected');
+            }
+        });
+    }
+
+    function setupMenuInteraction(menuId) {
+        const menuItems = document.querySelectorAll(`#${menuId} .menu-item`);
+        menuItems.forEach((item, idx) => {
+            item.addEventListener('click', () => {
+                const action = item.dataset.action;
+                if (menuId === 'mainMenu') {
+                    handleMainMenuAction(action);
+                } else if (menuId === 'exploreMenu') {
+                    handleExploreAction(action);
+                } else if (menuId === 'confirmMenu') {
+                    handleConfirmAction(action);
+                }
+            });
+        });
+    }
+
+    function handleMainMenuAction(action) {
+        if (action === 'explore') {
+            fadeToBlackThen(() => initPhase5(), 500);
+        } else if (action === 'updlog') {
+            fadeToBlackThen(() => displayContent('updlog'), 500);
+        } else if (action === 'credits') {
+            fadeToBlackThen(() => displayContent('credits'), 500);
+        }
+    }
+
+    // ============ PHASE 4: CONTENT DISPLAY ============
+    async function displayContent(type) {
+        let filePath = '';
+        if (type === 'updlog') {
+            filePath = 'assets/updlog.txt';
+        } else if (type === 'credits') {
+            filePath = 'assets/credits.txt';
+        }
+
+        try {
+            const response = await fetch(filePath);
+            if (!response.ok) throw new Error('File not found');
+            
+            let content = await response.text();
+            if (!content || content.trim().length === 0) {
+                content = 'Information not available.';
+            }
+            
+            // Add > prefix to each line
+            const lines = content.split('\n');
+            const prefixedContent = lines.map(line => line.trim() ? '> ' + line : '').join('\n');
+            document.getElementById('contentText').textContent = prefixedContent;
+        } catch (error) {
+            console.warn('Failed to load file:', filePath, error);
+            document.getElementById('contentText').textContent = '> Information not available.\n> \n> If you\'re running this locally, start a web server:\n> python3 -m http.server 8000\n> Then visit: http://localhost:8000';
+        }
+
+        sourcePhase = 3;
+        showPhase(4);
+    }
+
+    function goBackToMenu() {
+        fadeToBlackThen(() => {
+            if (sourcePhase === 5) {
+                initPhase5();
+            } else if (sourcePhase === 3) {
+                initPhase3();
+            }
+        }, 500);
+    }
+
+    // ============ PHASE 5: EXPLORE AT BOX ============
+    function initPhase5() {
+        currentPhase = 5;
+        sourcePhase = 5;
+        currentExploreSelection = 0;
+        document.querySelectorAll('.phase').forEach(p => {
+            p.classList.remove('active');
+            p.classList.remove('fade-out-phase');
+        });
+        document.getElementById('phase5').classList.add('active');
+        updateExploreMenuSelection();
+        setupMenuInteraction('exploreMenu');
+    }
+
+    function updateExploreMenuSelection() {
+        const items = document.querySelectorAll('#exploreMenu .menu-item');
+        items.forEach((item, idx) => {
+            if (idx === currentExploreSelection) {
+                item.classList.add('selected');
+            } else {
+                item.classList.remove('selected');
+            }
+        });
+    }
+
+    function handleExploreAction(action) {
+        if (action === 'emulation') {
+            fadeToBlackThen(() => showPhase5a(), 500);
+        } else if (action === 'about') {
+            fadeToBlackThen(() => displayAbout(), 500);
+        }
+    }
+
+    function showPhase5a() {
+        currentPhase = '5a';
+        currentConfirmSelection = 0;
+        document.querySelectorAll('.phase').forEach(p => p.classList.remove('active'));
+        document.getElementById('phase5a').classList.add('active');
+        updateConfirmMenuSelection();
+        setupMenuInteraction('confirmMenu');
+    }
+
+    function updateConfirmMenuSelection() {
+        const items = document.querySelectorAll('#confirmMenu .menu-item');
+        items.forEach((item, idx) => {
+            if (idx === currentConfirmSelection) {
+                item.classList.add('selected');
+            } else {
+                item.classList.remove('selected');
+            }
+        });
+    }
+
+    function handleConfirmAction(action) {
+        if (action === 'yes') {
+            redirectToATBox();
+        } else if (action === 'no') {
+            fadeToBlackThen(() => initPhase5(), 500);
+        }
+    }
+
+    async function displayAbout() {
+        try {
+            const response = await fetch('assets/about.txt');
+            if (!response.ok) throw new Error('File not found');
+            
+            let content = await response.text();
+            if (!content || content.trim().length === 0) {
+                content = 'Information not available.';
+            }
+            
+            // Add > prefix to each line
+            const lines = content.split('\n');
+            const prefixedContent = lines.map(line => line.trim() ? '> ' + line : '').join('\n');
+            document.getElementById('contentText').textContent = prefixedContent;
+        } catch (error) {
+            console.warn('Failed to load about.txt:', error);
+            document.getElementById('contentText').textContent = '> Information not available.\n> \n> If you\'re running this locally, start a web server:\n> python3 -m http.server 8000\n> Then visit: http://localhost:8000';
+        }
+
+        sourcePhase = 5;
+        showPhase(4);
+    }
+
+    function redirectToATBox() {
+        document.querySelector('.phase.active').classList.add('fade-out-phase');
+        setTimeout(() => {
+            window.location.href = 'atbox.html';
+        }, 500);
+    }
+
+    // ============ KEYBOARD NAVIGATION ============
+    document.addEventListener('keydown', (e) => {
+        if (currentPhase === 3) {
+            const items = document.querySelectorAll('#mainMenu .menu-item');
+            if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                currentMenuSelection = (currentMenuSelection - 1 + items.length) % items.length;
+                updateMainMenuSelection();
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                currentMenuSelection = (currentMenuSelection + 1) % items.length;
+                updateMainMenuSelection();
+            } else if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                const action = items[currentMenuSelection].dataset.action;
+                handleMainMenuAction(action);
+            }
+        } else if (currentPhase === 5) {
+            const items = document.querySelectorAll('#exploreMenu .menu-item');
+            if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                currentExploreSelection = (currentExploreSelection - 1 + items.length) % items.length;
+                updateExploreMenuSelection();
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                currentExploreSelection = (currentExploreSelection + 1) % items.length;
+                updateExploreMenuSelection();
+            } else if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                const action = items[currentExploreSelection].dataset.action;
+                handleExploreAction(action);
+            }
+        } else if (currentPhase === '5a') {
+            const items = document.querySelectorAll('#confirmMenu .menu-item');
+            if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                currentConfirmSelection = (currentConfirmSelection - 1 + items.length) % items.length;
+                updateConfirmMenuSelection();
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                currentConfirmSelection = (currentConfirmSelection + 1) % items.length;
+                updateConfirmMenuSelection();
+            } else if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                const action = items[currentConfirmSelection].dataset.action;
+                handleConfirmAction(action);
+            }
+        }
+    });
+
+    // ============ INITIALIZE ============
+    window.addEventListener('load', () => {
+        initPhase1();
+    });
 </script>
 
 </body>
