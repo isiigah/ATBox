@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AT Box - Welcome!</title>
+    <title>AT Box - Boot Manager</title>
     <style>
         * {
             box-sizing: border-box;
@@ -174,6 +174,49 @@
         .confirmation-text {
             font-size: 18px;
             margin-bottom: 20px;
+            line-height: 1.7;
+            white-space: pre-line;
+        }
+
+        .version-info {
+            font-size: 16px;
+            line-height: 1.6;
+            white-space: pre-line;
+            color: #d6d6d6;
+        }
+
+        .notification-box {
+            margin-top: 28px;
+            max-width: 760px;
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            padding: 14px 16px;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .notification-title {
+            font-size: 17px;
+            margin-bottom: 8px;
+        }
+
+        .notification-body {
+            font-size: 15px;
+            line-height: 1.7;
+            white-space: pre-line;
+            color: #d6d6d6;
+        }
+
+        .screen-overlay {
+            position: fixed;
+            inset: 0;
+            background: #000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.8s ease;
+            z-index: 9999;
+        }
+
+        .screen-overlay.active {
+            opacity: 1;
         }
 
         /* ============ TRANSITIONS ============ */
@@ -286,6 +329,11 @@
         <div class="menu-item" data-action="updlog">Check Update Logs</div>
         <div class="menu-item" data-action="credits">Credits</div>
     </div>
+    <div class="notification-box">
+        <div class="notification-title">The release of AT Fox</div>
+        <div class="notification-body">AT Fox is out - Sleek &amp; Modern, Still AT Box, but reskinned from scratch
+Experience a Ubuntu-MacOS style desktop while keeping it feature-packed and very lightweight (~135KB)</div>
+    </div>
 </div>
 
 <!-- PHASE 4: CONTENT DISPLAY -->
@@ -309,13 +357,20 @@
 <!-- PHASE 5a: EMULATION CONFIRMATION -->
 <div id="phase5a" class="phase">
     <div class="confirmation-container">
-        <div class="confirmation-text">> Are you ready?</div>
+        <div class="confirmation-text">Choose an Operating System</div>
+        <div class="version-info">Version Info:
+
+ATBOX (VISTA) 1.13.2
+ATBOX (FOX) 1.0</div>
         <div class="menu-container" style="margin-top: 15px;" id="confirmMenu">
-            <div class="menu-item" data-action="yes">Yes :)</div>
-            <div class="menu-item" data-action="no">No</div>
+            <div class="menu-item" data-action="vista">AT Box (Codename Vista)</div>
+            <div class="menu-item" data-action="fox">AT Box (Codename Fox)</div>
         </div>
+        <div class="back-button" onclick="fadeToBlackThen(() => initPhase5(), 500)">Back</div>
     </div>
 </div>
+
+<div id="screenOverlay" class="screen-overlay"></div>
 
 <script>
     // ============ STATE MACHINE ============
@@ -428,7 +483,11 @@
 
     function setupMenuInteraction(menuId) {
         const menuItems = document.querySelectorAll(`#${menuId} .menu-item`);
-        menuItems.forEach((item, idx) => {
+        menuItems.forEach((item) => {
+            if (item.dataset.bound === 'true') {
+                return;
+            }
+
             item.addEventListener('click', () => {
                 const action = item.dataset.action;
                 if (menuId === 'mainMenu') {
@@ -439,6 +498,8 @@
                     handleConfirmAction(action);
                 }
             });
+
+            item.dataset.bound = 'true';
         });
     }
 
@@ -547,10 +608,10 @@
     }
 
     function handleConfirmAction(action) {
-        if (action === 'yes') {
-            redirectToATBox();
-        } else if (action === 'no') {
-            fadeToBlackThen(() => initPhase5(), 500);
+        if (action === 'vista') {
+            launchOperatingSystem('atbox.html');
+        } else if (action === 'fox') {
+            launchOperatingSystem('atfox.html');
         }
     }
 
@@ -577,11 +638,21 @@
         showPhase(4);
     }
 
-    function redirectToATBox() {
-        document.querySelector('.phase.active').classList.add('fade-out-phase');
+    function launchOperatingSystem(targetPage) {
+        const activePhase = document.querySelector('.phase.active');
+        const overlay = document.getElementById('screenOverlay');
+
+        if (activePhase) {
+            activePhase.classList.add('fade-out-phase');
+        }
+
         setTimeout(() => {
-            window.location.href = 'atbox.html';
+            overlay.classList.add('active');
         }, 500);
+
+        setTimeout(() => {
+            window.location.href = targetPage;
+        }, 3500);
     }
 
     // ============ KEYBOARD NAVIGATION ============
