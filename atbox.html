@@ -2,10 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>The AT Box Project</title>
+<title>The AT Box Project [FINAL]</title>
 
 <style>
-
 :root {
     --bg1: #000000;
     --bg2: #0a0a0a;
@@ -1534,10 +1533,8 @@ textarea {
 </div>
 
 <div id="sysText" class="sysinfo">
-AT Box Family XF1.0.1
-== THIS IS A DEVELOPMENT RELEASE == :
-Keep in note that this versions might have problems and are only
-prepaired for testing purposes, THIS IS NOT AN OFFICIAL RELEASE||
+loading desktop elements...
+/bash run "explore.iuu"
 </div>
 
 <div id="shutdownScreen"></div>
@@ -2234,6 +2231,13 @@ Not affiliated with any organisation or company.</div>
             <div style="margin-top:4px;">
                 <div style="font-size:9px;color:#555;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:5px;">Next</div>
                 <canvas data-role="tetris-next" width="70" height="70" style="background:#111;border:1px solid #222;border-radius:3px;"></canvas>
+            </div>
+            <div style="margin-top:4px;">
+                <div style="font-size:9px;color:#555;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:5px;">Volume</div>
+                <div style="display:flex;align-items:center;gap:6px;">
+                    <input type="range" data-role="tetris-volume" min="0" max="300" value="100" style="flex:1;accent-color:var(--accent);">
+                    <span data-role="tetris-volume-label" style="font-size:10px;color:#888;min-width:32px;text-align:right;">100%</span>
+                </div>
             </div>
             <div style="margin-top:auto;font-size:9px;color:#444;line-height:1.6;">
                 ← → Move<br>↑ Rotate<br>↓ Soft drop<br>Space Hard drop
@@ -3105,6 +3109,23 @@ function tetrisClose(btnEl) {
     closeWin(btnEl);
 }
 
+function tetrisUpdateVolume(val, sliderEl) {
+    const win = sliderEl.closest('.window');
+    const label = win.querySelector('[data-role="tetris-volume-label"]');
+    if (label) label.textContent = val + '%';
+    
+    // Convert percentage to audio volume (0-3.0 range)
+    const volume = parseInt(val) / 100;
+    
+    // Store the desired volume for when audio is created
+    win._tetrisDesiredVolume = volume;
+    
+    // Apply to existing audio if it exists
+    if (win._tetrisAudio) {
+        win._tetrisAudio.volume = volume;
+    }
+}
+
 function tetrisBegin(btnEl) {
     const win = btnEl.closest('.window');
     const overlay = win.querySelector('[data-role="tetris-overlay"]');
@@ -3121,6 +3142,23 @@ function tetrisInit(win) {
     const COLS = 10, ROWS = 20, BLOCK = 26;
     canvas.width = COLS * BLOCK;
     canvas.height = ROWS * BLOCK;
+
+    // Bind volume slider
+    const volumeSlider = win.querySelector('[data-role="tetris-volume"]');
+    if (volumeSlider && !volumeSlider.dataset.bound) {
+        volumeSlider.dataset.bound = 'true';
+        volumeSlider.addEventListener('input', (e) => {
+            tetrisUpdateVolume(e.target.value, e.target);
+        });
+        volumeSlider.addEventListener('change', (e) => {
+            tetrisUpdateVolume(e.target.value, e.target);
+        });
+    }
+
+    // Initialize desired volume
+    if (win._tetrisDesiredVolume === undefined) {
+        win._tetrisDesiredVolume = 1.0; // Default 100%
+    }
 
     // Bind keyboard
     if (!win._tetrisKeyHandler) {
@@ -3408,6 +3446,26 @@ function tetrisRun(win) {
         drawBoard();
         requestAnimationFrame(loop);
     }
+
+    // Initialize and play tetris music
+    if (!win._tetrisAudio) {
+        const audio = new Audio('./assets/tetrisms1.mp3');
+        audio.loop = true;
+        audio.volume = win._tetrisDesiredVolume || 1.0; // Use stored volume or default 100%
+        win._tetrisAudio = audio;
+        audio.play().catch(e => console.log('Audio autoplay blocked:', e));
+    } else if (win._tetrisAudio.paused) {
+        win._tetrisAudio.currentTime = 0;
+        win._tetrisAudio.volume = win._tetrisDesiredVolume || 1.0; // Apply stored volume
+        win._tetrisAudio.play().catch(e => console.log('Audio play error:', e));
+    }
+
+    // Stop music when game stops
+    const originalStop = win._tetrisStop;
+    win._tetrisStop = () => {
+        if (win._tetrisAudio) win._tetrisAudio.pause();
+        originalStop();
+    };
 
     spawnPiece();
     requestAnimationFrame(loop);
@@ -4742,22 +4800,22 @@ function fadeOut(el) {
 // ---- SAFE MODE KERNEL BOOT SCREEN ----
 (function() {
     const SM_FILES = [
-        "CoreRoot.sys","ATKernelHost.sys","BootRender.dll","SafeModeLayer.sys",
-        "UIFrameCore.dll","DesktopHost.exe","TaskbarShell.dll","StartMenuHost.exe",
-        "WindowManager.sys","SystemDialogHost.dll","RecoveryInterface.exe",
-        "ConsoleRenderer.sys","FontRasterizer.dll","AnimationEngine.sys",
-        "InputHandler.sys","EventDispatcher.dll","LayoutEngine.sys",
-        "ExplorerElement.iuu","ExplorerUIUX.exe","ATGMLayout.dll",
-        "SidebarHost.sys","ContentPanelHost.exe","LogoAnimator.dll",
-        "BootSequence.sys","LoaderContainer.dll","StripAnimator.sys",
-        "LineRenderer.dll","ThemeManager.sys","AccentEngine.dll",
-        "WindowFrame.sys","TitlebarHost.dll","ButtonRenderer.sys",
-        "DialogManager.exe","CommandHost.exe","CmdInterface.sys",
-        "TextAreaCore.dll","GuideRenderer.sys","ScrollHandler.dll",
-        "IconRenderer.sys","DesktopIcons.dll","ClockService.sys",
-        "SessionManager.exe","RecoveryHandler.sys"
+        "os.js", "system.html", "style.css",
+        "root.fs","ntoskrnl.fs","glub.ux","hal.ux",
+        "uifc.ui","frame.winexe","shell.ux","accel.fs",
+        "splash.fs","diag.ux","ui.sys",
+        "debug.dxfs","text.sys","shell.sfx",
+        "theme.fs","main.css","check.ux",
+        "explore.iuu","engine.sys","flmgr.wgfx",
+        "timer.sys",
+        "boot.sys","loader.dll","strip.sys",
+        "line.dll","theme.sys","accent.dll",
+        "window.sys","title.dll","button.sys",
+        "dialog.exe","command.ecpa","cmd.sys",
+        "area.dll","guide.sys","scroll.ux",
+        "icon.sys","desktop.dll","clock.sys",
+        "session.exe","recovery.sys"
     ];
-
     const FRAME_INTERVAL = Math.round(1000 / 24); // ~41ms for 24fps stepped feel
     const MAX_LINES = 18; // max visible log lines
 
@@ -7963,9 +8021,11 @@ Themes
   <!-- Sidebar -->
   <div class="themes-sidebar">
     <div class="themes-nav-item active" data-section="wallpaper" onclick="themesNav(this,'wallpaper')">Wallpaper</div>
+    <div class="themes-nav-item" data-section="lockscreen" onclick="themesNav(this,'lockscreen')">Lock Screen</div>
     <div class="themes-nav-item" data-section="default" onclick="themesNav(this,'default')">AT Default Themes</div>
     <div class="themes-nav-item" data-section="custom" onclick="themesNav(this,'custom')">Custom Colour Themes</div>
     <div class="themes-nav-item" data-section="transparency" onclick="themesNav(this,'transparency')">Transparency</div>
+    <div class="themes-nav-item" data-section="advanced" onclick="themesNav(this,'advanced')">Advanced</div>
   </div>
 
   <!-- Content area -->
@@ -7976,22 +8036,54 @@ Themes
       <div class="themes-section-title">Wallpaper</div>
       <div class="themes-section-desc">Import an image from your PC to use as desktop wallpaper.</div>
       <div id="themes-wallpaper-preview" style="width:100%;height:130px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);background:#0a0a0a;margin:12px 0;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;">
-        <span id="themes-wallpaper-label" style="color:#555;font-size:12px;">No wallpaper set</span>
-        <img id="themes-wallpaper-thumb" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:5px;" alt="wallpaper preview">
+        <span data-role="themes-wallpaper-label" style="color:#555;font-size:12px;">No wallpaper set</span>
+        <img data-role="themes-wallpaper-thumb" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:5px;" alt="wallpaper preview">
       </div>
       <div style="display:flex;gap:8px;">
-        <button class="themes-btn-primary" onclick="document.getElementById('themes-wallpaper-input').click()">Import Wallpaper</button>
+        <button class="themes-btn-primary" onclick="this.closest('.window').querySelector('[data-role=\"themes-wallpaper-input\"]').click()">Import Wallpaper</button>
         <button class="themes-btn-secondary" onclick="themesRemoveWallpaper()">Remove</button>
       </div>
-      <input type="file" id="themes-wallpaper-input" accept="image/*" style="display:none;" onchange="themesLoadWallpaper(event)">
+      <input type="file" data-role="themes-wallpaper-input" accept="image/*" style="display:none;" onchange="themesLoadWallpaper(event)">
       <div style="margin-top:12px;" id="themes-wallpaper-fit-row">
         <span style="font-size:11px;color:#888;margin-right:8px;">Fit:</span>
-        <select id="themes-wallpaper-fit" onchange="themesApplyWallpaperFit()" style="background:#1a1a1a;border:1px solid #333;color:#ccc;padding:3px 8px;border-radius:3px;font-size:11px;cursor:pointer;">
+        <select data-role="themes-wallpaper-fit" onchange="themesApplyWallpaperFit(this)" style="background:#1a1a1a;border:1px solid #333;color:#ccc;padding:3px 8px;border-radius:3px;font-size:11px;cursor:pointer;">
           <option value="cover">Cover (fill)</option>
           <option value="contain">Contain (letterbox)</option>
           <option value="center">Center (no scale)</option>
           <option value="stretch">Stretch</option>
         </select>
+      </div>
+    </div>
+
+    <!-- LOCK SCREEN -->
+    <div class="themes-section" id="themes-section-lockscreen">
+      <div class="themes-section-title">Lock Screen</div>
+      <div class="themes-section-desc">Customize your lock screen wallpaper and login button appearance.</div>
+      
+      <div style="margin-top:14px;">
+        <div style="font-size:12px;color:#fff;margin-bottom:8px;font-weight:500;">Lock Screen Wallpaper</div>
+        <div data-role="themes-lockscreen-preview" style="width:100%;height:130px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);background:#0a0a0a;margin:12px 0;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;">
+          <span data-role="themes-lockscreen-label" style="color:#555;font-size:12px;">No lock screen wallpaper set</span>
+          <img data-role="themes-lockscreen-thumb" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:5px;" alt="lock screen preview">
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:14px;">
+          <button class="themes-btn-primary" onclick="this.closest('.window').querySelector('[data-role=\"themes-lockscreen-input\"]').click()">Import Wallpaper</button>
+          <button class="themes-btn-secondary" onclick="themesRemoveLockScreenWallpaper()">Remove</button>
+        </div>
+        <input type="file" data-role="themes-lockscreen-input" accept="image/*" style="display:none;" onchange="themesLoadLockScreenWallpaper(event)">
+      </div>
+
+      <div style="height:1px;background:rgba(255,255,255,0.08);margin:14px 0;"></div>
+
+      <div style="font-size:12px;color:#fff;margin-bottom:8px;font-weight:500;">Login Button Appearance</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:5px;border:1px solid rgba(255,255,255,0.07);background:rgba(255,255,255,0.04);">
+          <span style="font-size:11px;color:#ccc;">Transparent Button</span>
+          <div class="themes-toggle" data-role="login-btn-toggle" onclick="themesToggleLoginButton()">
+            <div class="themes-toggle-knob"></div>
+          </div>
+        </div>
+        <div style="font-size:10px;color:#666;padding:0 4px;">Makes the login button background transparent while keeping text visible.</div>
       </div>
     </div>
 
@@ -8062,10 +8154,32 @@ Themes
         <div style="height:1px;background:rgba(255,255,255,0.08);"></div>
         <div>
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-            <span style="font-size:12px;" data-role="opacity-label">Transparency Opacity: <b>50%</b></span>
+            <span style="font-size:12px;" data-role="opacity-label">Transparency Level: <b>50%</b></span>
           </div>
-          <input type="range" data-role="opacity-slider" min="0" max="90" value="50" style="width:100%;accent-color:var(--accent);" oninput="themesUpdateOpacity(this.value, this)">
+          <input type="range" data-role="opacity-slider" min="0" max="100" value="50" style="width:100%;accent-color:var(--accent);" oninput="themesUpdateOpacity(this.value, this)">
           <div style="font-size:10px;color:#555;margin-top:4px;" data-role="opacity-hint">Disabled while transparency is off.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADVANCED -->
+    <div class="themes-section" id="themes-section-advanced">
+      <div class="themes-section-title">Advanced</div>
+      <div class="themes-section-desc">Advanced customization options for window and UI elements.</div>
+      <div style="margin-top:14px;display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-size:12px;color:#ccc;">Button Transparency</span>
+          <div class="themes-toggle" data-role="button-trans-toggle" onclick="themesToggleButtonTransparency()">
+            <div class="themes-toggle-knob"></div>
+          </div>
+        </div>
+        <div style="height:1px;background:rgba(255,255,255,0.08);"></div>
+        <div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <span style="font-size:12px;" data-role="button-opacity-label">Button Transparency Level: <b>0%</b></span>
+          </div>
+          <input type="range" data-role="button-opacity-slider" min="0" max="100" value="0" style="width:100%;accent-color:var(--accent);" oninput="themesUpdateButtonOpacity(this.value, this)">
+          <div style="font-size:10px;color:#555;margin-top:4px;" data-role="button-opacity-hint">Disabled while button transparency is off.</div>
         </div>
       </div>
     </div>
@@ -8285,8 +8399,10 @@ function themesLoadWallpaper(e) {
     const reader = new FileReader();
     reader.onload = function(ev) {
         const dataUrl = ev.target.result;
+        const win = e.target.closest('.window');
+        const fitSelect = win.querySelector('[data-role="themes-wallpaper-fit"]');
         localStorage.setItem('atbox_wallpaper', dataUrl);
-        localStorage.setItem('atbox_wallpaper_fit', document.getElementById('themes-wallpaper-fit').value);
+        localStorage.setItem('atbox_wallpaper_fit', fitSelect ? fitSelect.value : 'cover');
         themesApplyWallpaper();
         themesRefreshWallpaperPreview();
     };
@@ -8331,8 +8447,8 @@ function themesRefreshWallpaperPreview() {
     // find open themes windows and update preview
     document.querySelectorAll('.window[data-app-id="themes"][data-template="false"]').forEach(win => {
         const dataUrl = localStorage.getItem('atbox_wallpaper');
-        const thumb = win.querySelector('#themes-wallpaper-thumb');
-        const label = win.querySelector('#themes-wallpaper-label');
+        const thumb = win.querySelector('[data-role="themes-wallpaper-thumb"]');
+        const label = win.querySelector('[data-role="themes-wallpaper-label"]');
         if (dataUrl) {
             thumb.src = dataUrl; // works for both base64 and relative paths
             thumb.style.display = 'block';
@@ -8363,6 +8479,8 @@ function themesNav(el, section) {
     if (section === 'custom') { cpInit(win); themesRenderCustomList(win); }
     if (section === 'transparency') { _themesUpdateTransparencyUI(win); }
     if (section === 'default') { themesHighlightCurrentPreset(win); }
+    if (section === 'lockscreen') { themesRefreshLockScreenPreview(); themesUpdateLoginButtonUI(); }
+    if (section === 'advanced') { themesUpdateButtonTransparencyUI(); }
 }
 
 function cpInit(win) {
@@ -8645,8 +8763,9 @@ function themesApplyTransparency() {
             .taskbar-app { backdrop-filter: none !important; }
         `;
     } else {
-        // Transparent — slider: 0% = fully see-through, 90% = nearly opaque
-        const t = atboxOpacity / 90; // 0..1
+        // Transparent — slider: 0% = nearly opaque, 100% = fully see-through
+        // Invert the opacity value so higher number = more transparency
+        const t = (100 - atboxOpacity) / 100; // 0..1 (inverted: 0 at slider 100, 1 at slider 0)
         const bgAlpha = t * 0.75;
         const taskbarAlpha = t * 0.82;
         const blur = Math.round(6 + t * 14);
@@ -8658,18 +8777,18 @@ function themesApplyTransparency() {
     }
 }
 
-function themesUpdateOpacity(val, sliderEl) {
-    atboxOpacity = parseInt(val);
-    localStorage.setItem('atbox_opacity', atboxOpacity);
+function themesUpdateButtonOpacity(val, sliderEl) {
+    atboxButtonOpacity = parseInt(val);
+    localStorage.setItem('atbox_button_opacity', atboxButtonOpacity);
     // Update label in the same window as the slider
     if (sliderEl) {
         const win = sliderEl.closest('.window');
         if (win) {
-            const label = win.querySelector('[data-role="opacity-label"]');
-            if (label) label.innerHTML = `Transparency Opacity: <b>${atboxOpacity}%</b>`;
+            const label = win.querySelector('[data-role="button-opacity-label"]');
+            if (label) label.innerHTML = `Button Transparency Level: <b>${atboxButtonOpacity}%</b>`;
         }
     }
-    if (atboxTransparency) themesApplyTransparency();
+    if (atboxButtonTransparent) themesApplyButtonTransparency();
 }
 
 function _themesUpdateTransparencyUI(win) {
@@ -8686,7 +8805,7 @@ function _themesUpdateTransparencyUI(win) {
         slider.style.cursor = atboxTransparency ? 'pointer' : 'not-allowed';
     }
     if (hint) hint.style.display = atboxTransparency ? 'none' : '';
-    if (label) label.innerHTML = `Transparency Opacity: <b>${atboxOpacity}%</b>`;
+    if (label) label.innerHTML = `Transparency Level: <b>${atboxOpacity}%</b>`;
 }
 
 function themesInitTransparencyUI() {
@@ -8695,10 +8814,146 @@ function themesInitTransparencyUI() {
     wins.forEach(win => _themesUpdateTransparencyUI(win));
 }
 
+// ---- LOCK SCREEN WALLPAPER FUNCTIONS ----
+function themesLoadLockScreenWallpaper(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+        localStorage.setItem('atbox_lockscreen_wallpaper', reader.result);
+        themesRefreshLockScreenPreview();
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+}
+
+function themesApplyLockScreenWallpaper() {
+    const dataUrl = localStorage.getItem('atbox_lockscreen_wallpaper');
+    const lockscreen = document.getElementById('loginScreen');
+    if (!lockscreen) return;
+    if (dataUrl) {
+        lockscreen.style.backgroundImage = `url("${dataUrl}") !important`;
+        lockscreen.style.backgroundSize = 'cover !important';
+        lockscreen.style.backgroundPosition = 'center !important';
+        lockscreen.style.backgroundRepeat = 'no-repeat !important';
+    } else {
+        lockscreen.style.backgroundImage = 'url(\'assets/oobewl.png\') !important';
+        lockscreen.style.backgroundSize = 'cover !important';
+        lockscreen.style.backgroundPosition = 'center !important';
+        lockscreen.style.backgroundRepeat = 'no-repeat !important';
+    }
+}
+
+function themesRemoveLockScreenWallpaper() {
+    localStorage.removeItem('atbox_lockscreen_wallpaper');
+    themesApplyLockScreenWallpaper();
+    themesRefreshLockScreenPreview();
+}
+
+function themesRefreshLockScreenPreview() {
+    document.querySelectorAll('.window[data-app-id="themes"][data-template="false"]').forEach(win => {
+        const dataUrl = localStorage.getItem('atbox_lockscreen_wallpaper');
+        const thumb = win.querySelector('[data-role="themes-lockscreen-thumb"]');
+        const label = win.querySelector('[data-role="themes-lockscreen-label"]');
+        if (dataUrl) {
+            thumb.src = dataUrl;
+            thumb.style.display = 'block';
+            label.style.display = 'none';
+        } else {
+            thumb.style.display = 'none';
+            label.style.display = '';
+        }
+    });
+}
+
+// ---- LOGIN BUTTON TRANSPARENCY ----
+let atboxLoginButtonTransparent = localStorage.getItem('atbox_login_button_transparent') === 'true' || false;
+
+function themesToggleLoginButton() {
+    atboxLoginButtonTransparent = !atboxLoginButtonTransparent;
+    localStorage.setItem('atbox_login_button_transparent', atboxLoginButtonTransparent);
+    themesApplyLoginButtonStyle();
+    themesUpdateLoginButtonUI();
+}
+
+function themesApplyLoginButtonStyle() {
+    // Style the login button based on the toggle
+    if (atboxLoginButtonTransparent) {
+        const style = document.getElementById('atbox-login-btn-style') || document.createElement('style');
+        style.id = 'atbox-login-btn-style';
+        style.textContent = `
+            .login-btn { background: rgba(255,255,255,0.1) !important; backdrop-filter: blur(8px) !important; }
+            .login-btn:hover { background: rgba(255,255,255,0.15) !important; }
+        `;
+        if (!document.getElementById('atbox-login-btn-style')) document.head.appendChild(style);
+    } else {
+        const style = document.getElementById('atbox-login-btn-style');
+        if (style) style.remove();
+    }
+}
+
+function themesUpdateLoginButtonUI() {
+    document.querySelectorAll('.window[data-app-id="themes"][data-template="false"]').forEach(win => {
+        const toggle = win.querySelector('[data-role="login-btn-toggle"]');
+        if (toggle) toggle.classList.toggle('on', atboxLoginButtonTransparent);
+    });
+}
+
+// ---- BUTTON TRANSPARENCY (Window buttons) ----
+let atboxButtonTransparent = localStorage.getItem('atbox_button_transparent') === 'true' || false;
+let atboxButtonOpacity = parseInt(localStorage.getItem('atbox_button_opacity')) || 0; // Default 0% (off)
+
+function themesToggleButtonTransparency() {
+    atboxButtonTransparent = !atboxButtonTransparent;
+    localStorage.setItem('atbox_button_transparent', atboxButtonTransparent);
+    themesApplyButtonTransparency();
+    themesUpdateButtonTransparencyUI();
+}
+
+function themesApplyButtonTransparency() {
+    if (atboxButtonTransparent) {
+        const style = document.getElementById('atbox-button-trans-style') || document.createElement('style');
+        style.id = 'atbox-button-trans-style';
+        // Calculate opacity based on slider value (0-100% -> 0.0-1.0)
+        const opacity = atboxButtonOpacity / 100;
+        const hoverOpacity = Math.min(opacity + 0.1, 1.0); // Slightly more opaque on hover
+        style.textContent = `
+            .win-btns .btn { background: rgba(255,255,255,${opacity.toFixed(2)}) !important; backdrop-filter: blur(6px) !important; }
+            .win-btns .btn:hover { background: rgba(255,255,255,${hoverOpacity.toFixed(2)}) !important; }
+        `;
+        if (!document.getElementById('atbox-button-trans-style')) document.head.appendChild(style);
+    } else {
+        const style = document.getElementById('atbox-button-trans-style');
+        if (style) style.remove();
+    }
+}
+
+function themesUpdateButtonTransparencyUI() {
+    document.querySelectorAll('.window[data-app-id="themes"][data-template="false"]').forEach(win => {
+        const toggle = win.querySelector('[data-role="button-trans-toggle"]');
+        const slider = win.querySelector('[data-role="button-opacity-slider"]');
+        const hint = win.querySelector('[data-role="button-opacity-hint"]');
+        const label = win.querySelector('[data-role="button-opacity-label"]');
+        if (!toggle) return;
+        toggle.classList.toggle('on', atboxButtonTransparent);
+        if (slider) {
+            slider.value = atboxButtonOpacity;
+            slider.disabled = !atboxButtonTransparent;
+            slider.style.opacity = atboxButtonTransparent ? '1' : '0.4';
+            slider.style.cursor = atboxButtonTransparent ? 'pointer' : 'not-allowed';
+        }
+        if (hint) hint.style.display = atboxButtonTransparent ? 'none' : '';
+        if (label) label.innerHTML = `Button Transparency Level: <b>${atboxButtonOpacity}%</b>`;
+    });
+}
+
 // On init, apply saved wallpaper and transparency
 (function themesBootApply() {
     themesApplyWallpaper();
+    themesApplyLockScreenWallpaper();
     themesApplyTransparency();
+    themesApplyLoginButtonStyle();
+    themesApplyButtonTransparency();
     // Re-render preview when themes window opens
     const origOpen = window.openApp;
     window.openApp = function(id, options) {
@@ -8706,9 +8961,13 @@ function themesInitTransparencyUI() {
         if (id === 'themes') {
             setTimeout(() => {
                 themesRefreshWallpaperPreview();
+                themesRefreshLockScreenPreview();
+                themesUpdateLoginButtonUI();
+                themesUpdateButtonTransparencyUI();
                 const wf = localStorage.getItem('atbox_wallpaper_fit');
                 const fitEl = document.getElementById('themes-wallpaper-fit');
                 if (wf && fitEl) fitEl.value = wf;
+                _themesUpdateTransparencyUI(document.querySelector('.window[data-app-id="themes"][data-template="false"]'));
             }, 50);
         }
         return result;
