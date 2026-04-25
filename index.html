@@ -330,9 +330,9 @@
         <div class="menu-item" data-action="credits">Credits</div>
     </div>
     <div class="notification-box">
-        <div class="notification-title">The release of AT Fox</div>
-        <div class="notification-body">AT Fox is out - Sleek &amp; Modern, Still AT Box, but reskinned from scratch
-Experience a Ubuntu-MacOS style desktop while keeping it feature-packed and very lightweight (~135KB)</div>
+        <div class="notification-title">The release of AT Aurora</div>
+        <div class="notification-body">AT Aurora is out - a more atmospheric AT Box build with a darker blue presentation, stronger glow work, and a more polished visual identity.
+Experience a glossy boot flow, updated OS build selection, and a futuristic desktop style that pushes AT Box further into its own look.</div>
     </div>
 </div>
 
@@ -357,14 +357,16 @@ Experience a Ubuntu-MacOS style desktop while keeping it feature-packed and very
 <!-- PHASE 5a: EMULATION CONFIRMATION -->
 <div id="phase5a" class="phase">
     <div class="confirmation-container">
-        <div class="confirmation-text">Choose an Operating System</div>
+        <div class="confirmation-text">Choose an Operating System Build</div>
         <div class="version-info">Version Info:
 
 ATBOX (VISTA) 1.13.2
-ATBOX (FOX) 1.0</div>
+ATBOX (FOX) 1.0
+ATBOX (AURORA) 1.0</div>
         <div class="menu-container" style="margin-top: 15px;" id="confirmMenu">
             <div class="menu-item" data-action="vista">AT Box (Codename Vista)</div>
             <div class="menu-item" data-action="fox">AT Box (Codename Fox)</div>
+            <div class="menu-item" data-action="aurora">ATBox (Codename Aurora)</div>
         </div>
         <div class="back-button" onclick="fadeToBlackThen(() => initPhase5(), 500)">Back</div>
     </div>
@@ -612,6 +614,8 @@ ATBOX (FOX) 1.0</div>
             launchOperatingSystem('atbox.html');
         } else if (action === 'fox') {
             launchOperatingSystem('atfox.html');
+        } else if (action === 'aurora') {
+            launchOperatingSystem('aurora.html');
         }
     }
 
@@ -652,7 +656,7 @@ ATBOX (FOX) 1.0</div>
 
         setTimeout(() => {
             window.location.href = targetPage;
-        }, 3500);
+        }, 1500);
     }
 
     // ============ KEYBOARD NAVIGATION ============
