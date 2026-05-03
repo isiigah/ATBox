@@ -1,0 +1,2937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AT DOS</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  /* ── Custom retro chunky arrow cursor (Win 1.0–3.0 style via SVG data URI) ── */
+  :root {
+    --cursor-default: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='24' viewBox='0 0 20 24'%3E%3Cpolygon points='2,2 2,20 7,15 11,23 14,22 10,14 17,14' fill='white' stroke='black' stroke-width='1.5'/%3E%3C/svg%3E") 2 2, default;
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    background: #000;
+    cursor: var(--cursor-default);
+    overflow: hidden;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 14px;
+    line-height: 1.35;
+  }
+
+  /* CRT Scanline Overlay */
+#screen::before {
+    content: " ";
+    display: block;
+    position: absolute;
+    top: 0; left: 0; bottom: 0; right: 0;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), 
+                linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+    z-index: 100;
+    background-size: 100% 3px, 3px 100%;
+    pointer-events: none;
+    animation: flicker 0.15s infinite;
+}
+
+@keyframes flicker {
+    0% { opacity: 0.95; }
+    50% { opacity: 1; }
+    100% { opacity: 0.98; }
+}
+
+/* Retro Cursor Mode */
+.gui-mode {
+    cursor: url('https://cur.cursors-4u.net/computers/com-1/com162.cur'), auto !important;
+}
+
+  /* ── CRT wrapper — sits over everything ── */
+  #crt-overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9999;
+    /* Scanlines */
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent 2px,
+      rgba(0,0,0,0.18) 2px,
+      rgba(0,0,0,0.18) 4px
+    );
+    /* Vignette edges */
+    box-shadow: inset 0 0 80px rgba(0,0,0,0.55);
+    animation: crt-flicker 0.12s infinite;
+  }
+  @keyframes crt-flicker {
+    0%   { opacity: 1; }
+    92%  { opacity: 1; }
+    93%  { opacity: 0.92; }
+    94%  { opacity: 1; }
+    97%  { opacity: 0.96; }
+    100% { opacity: 1; }
+  }
+
+  #screen {
+    width: 100%;
+    height: 100%;
+    padding: 8px 12px;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    color: var(--fg, #fff);
+    background: var(--bg, #000);
+    white-space: pre-wrap;
+    word-break: normal;
+    overflow-wrap: break-word;
+    cursor: var(--cursor-default);
+  }
+  #screen::-webkit-scrollbar { width: 0; }
+  #screen { scrollbar-width: none; }
+
+  .cursor-blink {
+    display: inline-block;
+    width: 8px;
+    height: 1em;
+    background: var(--fg, #fff);
+    animation: blink 1s step-end infinite;
+    vertical-align: text-bottom;
+    margin-bottom: 1px;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  #input-layer {
+    position: fixed; top: 0; left: 0;
+    width: 0; height: 0;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .orange { color: #ff8800; }
+  .highlight {
+    background: var(--fg, #fff);
+    color: var(--bg, #000);
+  }
+
+  /* ── GUI Launcher ── */
+  #gui-launcher {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: #008080;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 18px;
+    cursor: var(--cursor-default);
+    z-index: 100;
+    font-family: 'Courier New', Courier, monospace;
+    overflow-y: auto;
+  }
+  #gui-launcher.active { display: flex; }
+
+  #gui-titlebar {
+    width: 100%;
+    max-width: 700px;
+    background: #000080;
+    color: #fff;
+    font-size: 13px;
+    font-weight: bold;
+    padding: 4px 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 2px solid #fff;
+    border-bottom: none;
+    cursor: var(--cursor-default);
+  }
+  #gui-titlebar-close {
+    background: #c0c0c0;
+    color: #000;
+    border: 2px outset #fff;
+    font-size: 11px;
+    font-weight: bold;
+    padding: 1px 6px;
+    cursor: var(--cursor-default);
+    font-family: 'Courier New', Courier, monospace;
+  }
+  #gui-titlebar-close:hover { background: #ff4444; color: #fff; }
+
+  #gui-body {
+    width: 100%;
+    max-width: 700px;
+    background: #c0c0c0;
+    border: 2px solid #fff;
+    border-top: none;
+    padding: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: flex-start;
+  }
+
+  .gui-icon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 90px;
+    cursor: var(--cursor-default);
+    padding: 6px 4px;
+    border: 2px solid transparent;
+  }
+  .gui-icon:hover {
+    background: #000080;
+    border: 2px dashed #fff;
+  }
+  .gui-icon:hover .gui-label { color: #fff; }
+  .gui-icon-glyph {
+    font-size: 26px;
+    line-height: 1;
+    margin-bottom: 5px;
+    user-select: none;
+  }
+  .gui-label {
+    font-size: 11px;
+    color: #000;
+    text-align: center;
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: bold;
+    user-select: none;
+  }
+  #gui-statusbar {
+    width: 100%;
+    max-width: 700px;
+    background: #c0c0c0;
+    border: 2px inset #808080;
+    padding: 3px 8px;
+    font-size: 11px;
+    color: #000;
+    font-family: 'Courier New', Courier, monospace;
+    margin-top: 6px;
+  }
+</style>
+</head>
+<body>
+<div id="crt-overlay"></div>
+<div id="gui-launcher">
+  <div id="gui-titlebar">
+    <span>&#9632; AT DOS Program Manager</span>
+    <button id="gui-titlebar-close" onclick="closeGui()">&#x2715; Exit to DOS</button>
+  </div>
+  <div id="gui-body" id="gui-icons"></div>
+  <div id="gui-statusbar">AT DOS GUI  |  Click an icon to launch  |  Press ESC to return to terminal</div>
+</div>
+<div id="screen"></div>
+<textarea id="input-layer" tabindex="0"></textarea>
+
+<script>
+// ─── GLOBALS ─────────────────────────────────────────────────────────────────
+const screen = document.getElementById('screen');
+const inputLayer = document.getElementById('input-layer');
+
+let fgColor = '#ffffff';
+let bgColor = '#000000';
+
+let state = 'BOOT'; // BOOT, CMD, NOTEPAD, FLMGR, APP, GUI
+let guiMode = false; // true when GUI launcher is open
+let cmdBuffer = '';
+let cmdHistory = [];
+let histIdx = -1;
+
+// Notepad state
+let notepadContent = '';
+let notepadMode = 'view'; // view/edit
+
+// File Manager state
+let flmgrIdx = 0;
+
+// Tasks state
+let tasks = [];
+
+// Crypt state
+let cryptMode = 'idle'; // idle, waiting
+let cryptInput = '';
+
+// Mail state
+const mails = [
+  { from: 'SYSTEM@ATDOS', subject: 'Welcome to AT DOS!', body: 'Thank you for using AT DOS.\nThis system is fully operational.\nEnjoy your experience.' },
+  { from: 'ADMIN@ATDOS',  subject: 'System Update',      body: 'A system update is available.\nPlease run LNCH to check for updates.\nVersion: u01.1 O7' },
+  { from: 'USER@ATDOS',   subject: 'Test Message',        body: 'This is a test message.\nIf you received this, the mail\nsystem is working correctly.' },
+];
+let mailIdx = 0;
+let mailView = 'list'; // list / read
+
+// Defrag / Backup animation handles
+let animHandle = null;
+let defragPos = 0;
+let backupPos = 0;
+
+// Calendar
+let calMonth = new Date().getMonth();
+let calYear  = new Date().getFullYear();
+
+// Clock
+let clockHandle = null;
+
+// Current app name
+let currentApp = '';
+
+// ─── COLOR MAP ────────────────────────────────────────────────────────────────
+const colorMap = {
+  '0':'#000000','1':'#0000AA','2':'#00AA00','3':'#00AAAA',
+  '4':'#AA0000','5':'#AA00AA','6':'#AAAA00','7':'#AAAAAA',
+  '8':'#555555','9':'#5555FF','A':'#55FF55','B':'#55FFFF',
+  'C':'#FF5555','D':'#FF55FF','E':'#FFFF55','F':'#FFFFFF'
+};
+
+// ─── FILESYSTEM ──────────────────────────────────────────────────────────────
+const fs = {
+  'C:/System/ijconfig.sys': ';;AT DOS SYSTEM CONFIG\r\nVERSION=1.0\r\nMODE=STANDARD\r\nCOLOR=07',
+  'C:/System/main.sys':     ';;MAIN SYSTEM MODULE\r\nLOAD=KERNAL\r\nLOAD=BIOS\r\nSTART=CMD',
+  'C:/System/kernal.sys':   ';;KERNAL MODULE v1.0\r\nHANDLES=MEMORY,IO,FS\r\nPRIORITY=HIGH',
+  'C:/System/ftcdiag.sys':  ';;FAULT DIAGNOSTIC MODULE\r\nLAST_CHECK=OK\r\nERRORS=0',
+  'C:/System/hlp.sys':      ';;HELP SYSTEM MODULE\r\nDATA=COMMANDS,USAGE,TIPS',
+  'C:/System/bios.sys':     ';;AT-BIOS v1987.1\r\nCOPYRIGHT=1987\r\nPOST=OK',
+  'C:/User/test1.txt':      'Hello World!\r\nThis is test file 1.\r\nCreated by AT DOS.',
+  'C:/User/notes.txt':      'My Notes:\r\n- Remember to defrag weekly\r\n- Check disk space\r\n- Update config',
+  'C:/lnch/notepad.lx':     '[LNCH APP: NOTEPAD]',
+  'C:/lnch/flmgr.lx':       '[LNCH APP: FILE MANAGER]',
+  'C:/lnch/clock.lx':       '[LNCH APP: CLOCK]',
+  'C:/lnch/netmap.lx':      '[LNCH APP: NETWORK MAP]',
+  'C:/lnch/sysstat.lx':     '[LNCH APP: SYSTEM STATUS]',
+  'C:/lnch/defrag.lx':      '[LNCH APP: DEFRAG]',
+  'C:/lnch/calc.lx':        '[LNCH APP: CALCULATOR]',
+  'C:/lnch/weather.lx':     '[LNCH APP: WEATHER]',
+  'C:/lnch/calendar.lx':    '[LNCH APP: CALENDAR]',
+  'C:/lnch/mail.lx':        '[LNCH APP: MAIL]',
+  'C:/lnch/diskchk.lx':     '[LNCH APP: DISK CHECK]',
+  'C:/lnch/crypt.lx':       '[LNCH APP: CRYPT]',
+  'C:/lnch/backup.lx':      '[LNCH APP: BACKUP]',
+  'C:/lnch/hardware.lx':    '[LNCH APP: HARDWARE]',
+  'C:/lnch/tasks.lx':       '[LNCH APP: TASKS]',
+  'C:/lnch/ping.lx':        '[LNCH APP: PING]',
+  'C:/lnch/snake.lx':       '[LNCH APP: SNAKE]',
+  'C:/lnch/music.lx':       '[LNCH APP: MUSIC]',
+  'C:/lnch/passwd.lx':      '[LNCH APP: PASSWD]',
+  'C:/lnch/paint.lx':       '[LNCH APP: PAINT]',
+};
+
+const fileSizes = {
+  'ijconfig.sys':'2 KB','main.sys':'3 KB','kernal.sys':'8 KB',
+  'ftcdiag.sys':'4 KB','hlp.sys':'6 KB','bios.sys':'12 KB',
+  'test1.txt':'1 KB','notes.txt':'1 KB',
+  'notepad.lx':'14 KB','flmgr.lx':'18 KB','clock.lx':'5 KB',
+  'netmap.lx':'9 KB','sysstat.lx':'11 KB','defrag.lx':'7 KB',
+  'calc.lx':'6 KB','weather.lx':'5 KB','calendar.lx':'5 KB',
+  'mail.lx':'8 KB','diskchk.lx':'10 KB','crypt.lx':'7 KB',
+  'backup.lx':'9 KB','hardware.lx':'6 KB','tasks.lx':'5 KB',
+  'ping.lx':'4 KB','snake.lx':'9 KB','music.lx':'6 KB','passwd.lx':'3 KB','paint.lx':'8 KB',
+};
+
+const flmgrEntries = [
+  { label:'[System]',        type:'dir',  path:null },
+  { label:'  ijconfig.sys',  type:'file', path:'C:/System/ijconfig.sys', app:null },
+  { label:'  main.sys',      type:'file', path:'C:/System/main.sys',     app:null },
+  { label:'  kernal.sys',    type:'file', path:'C:/System/kernal.sys',   app:null },
+  { label:'  ftcdiag.sys',   type:'file', path:'C:/System/ftcdiag.sys',  app:null },
+  { label:'  hlp.sys',       type:'file', path:'C:/System/hlp.sys',      app:null },
+  { label:'  bios.sys',      type:'file', path:'C:/System/bios.sys',     app:null },
+  { label:'[User]',          type:'dir',  path:null },
+  { label:'  test1.txt',     type:'file', path:'C:/User/test1.txt',      app:null },
+  { label:'  notes.txt',     type:'file', path:'C:/User/notes.txt',      app:null },
+  { label:'[lnch]',          type:'dir',  path:null },
+  { label:'  notepad.lx',    type:'lx',   path:'C:/lnch/notepad.lx',     app:'notepad'  },
+  { label:'  flmgr.lx',      type:'lx',   path:'C:/lnch/flmgr.lx',       app:'flmgr'   },
+  { label:'  clock.lx',      type:'lx',   path:'C:/lnch/clock.lx',       app:'clock'    },
+  { label:'  netmap.lx',     type:'lx',   path:'C:/lnch/netmap.lx',      app:'netmap'   },
+  { label:'  sysstat.lx',    type:'lx',   path:'C:/lnch/sysstat.lx',     app:'sysstat'  },
+  { label:'  defrag.lx',     type:'lx',   path:'C:/lnch/defrag.lx',      app:'defrag'   },
+  { label:'  calc.lx',       type:'lx',   path:'C:/lnch/calc.lx',        app:'calc'     },
+  { label:'  weather.lx',    type:'lx',   path:'C:/lnch/weather.lx',     app:'weather'  },
+  { label:'  calendar.lx',   type:'lx',   path:'C:/lnch/calendar.lx',    app:'calendar' },
+  { label:'  mail.lx',       type:'lx',   path:'C:/lnch/mail.lx',        app:'mail'     },
+  { label:'  diskchk.lx',    type:'lx',   path:'C:/lnch/diskchk.lx',     app:'diskchk'  },
+  { label:'  crypt.lx',      type:'lx',   path:'C:/lnch/crypt.lx',       app:'crypt'    },
+  { label:'  backup.lx',     type:'lx',   path:'C:/lnch/backup.lx',      app:'backup'   },
+  { label:'  hardware.lx',   type:'lx',   path:'C:/lnch/hardware.lx',    app:'hardware' },
+  { label:'  tasks.lx',      type:'lx',   path:'C:/lnch/tasks.lx',      app:'tasks'    },
+  { label:'  ping.lx',       type:'lx',   path:'C:/lnch/ping.lx',        app:'ping'     },
+  { label:'  snake.lx',      type:'lx',   path:'C:/lnch/snake.lx',       app:'snake'    },
+  { label:'  music.lx',      type:'lx',   path:'C:/lnch/music.lx',       app:'music'    },
+  { label:'  passwd.lx',     type:'lx',   path:'C:/lnch/passwd.lx',      app:'passwd'   },
+  { label:'  paint.lx',      type:'lx',   path:'C:/lnch/paint.lx',       app:'paint'    },
+];
+
+// ─── THEME ───────────────────────────────────────────────────────────────────
+function applyTheme(fg, bg) {
+  fgColor = fg; bgColor = bg;
+  document.documentElement.style.setProperty('--fg', fg);
+  document.documentElement.style.setProperty('--bg', bg);
+  screen.style.color = fg;
+  screen.style.background = bg;
+  document.body.style.background = bg;
+}
+
+// ─── RENDER HELPERS ──────────────────────────────────────────────────────────
+function append(text, cls) {
+  const span = document.createElement('span');
+  if (cls) span.className = cls;
+  span.textContent = text;
+  screen.appendChild(span);
+  scrollBottom();
+}
+
+function appendHTML(html) {
+  const div = document.createElement('div');
+  div.innerHTML = html;
+  screen.appendChild(div);
+  scrollBottom();
+}
+
+function newline(n=1) {
+  for(let i=0;i<n;i++) screen.appendChild(document.createTextNode('\n'));
+  scrollBottom();
+}
+
+function clearScreen() {
+  screen.innerHTML = '';
+}
+
+function scrollBottom() {
+  screen.scrollTop = screen.scrollHeight;
+}
+
+function scrollToPrompt() {
+  if(promptEl) {
+    promptEl.scrollIntoView({ block: 'center' });
+  } else {
+    screen.scrollTop = screen.scrollHeight;
+  }
+}
+
+// ─── PROMPT ──────────────────────────────────────────────────────────────────
+let promptEl = null;
+let cmdSpan  = null;
+let blinkEl  = null;
+
+function showPrompt() {
+  stopAnim();
+  if(clockHandle) { clearInterval(clockHandle); clockHandle=null; }
+  state = 'CMD';
+  cmdBuffer = '';
+  histIdx = -1;
+
+  // Remove old pad if any
+  const oldPad = document.getElementById('prompt-pad');
+  if(oldPad) oldPad.remove();
+
+  promptEl = document.createElement('div');
+  promptEl.id = 'prompt-line';
+
+  const pText = document.createElement('span');
+  pText.textContent = 'C:/> ';
+  promptEl.appendChild(pText);
+
+  cmdSpan = document.createElement('span');
+  promptEl.appendChild(cmdSpan);
+
+  blinkEl = document.createElement('span');
+  blinkEl.className = 'cursor-blink';
+  promptEl.appendChild(blinkEl);
+
+  screen.appendChild(promptEl);
+
+  // Add spacer after prompt so it's never at the very bottom edge
+  const pad = document.createElement('div');
+  pad.id = 'prompt-pad';
+  pad.style.height = '35vh';
+  screen.appendChild(pad);
+
+  // Scroll prompt into view with some space above it
+  setTimeout(() => {
+    promptEl.scrollIntoView({ block: 'center' });
+  }, 10);
+}
+
+function updateCmdDisplay() {
+  if(cmdSpan) cmdSpan.textContent = cmdBuffer;
+}
+
+function finalizePrompt(cmd) {
+  if(blinkEl) { blinkEl.remove(); blinkEl = null; }
+  // Remove the spacer pad so next output is flush
+  const oldPad = document.getElementById('prompt-pad');
+  if(oldPad) oldPad.remove();
+  newline();
+}
+
+// ─── BOX DRAWING ─────────────────────────────────────────────────────────────
+function makeBox(title, subtitle, lines, footer) {
+  const W = 70;
+  const top    = '=' .repeat(W);
+  const bottom = '=' .repeat(W);
+  const pad = (s, w) => { s = String(s); return s + ' '.repeat(Math.max(0, w-s.length)); };
+  const center = (s, w) => {
+    const sp = Math.max(0, w - s.length);
+    const l = Math.floor(sp/2), r = sp-l;
+    return ' '.repeat(l)+s+' '.repeat(r);
+  };
+
+  let out = top + '\n';
+  out += '| ' + pad(title, W-4) + ' |\n';
+  if(subtitle) out += '| ' + pad(subtitle, W-4) + ' |\n';
+  out += top + '\n';
+  for(const l of lines) {
+    if(l === '---') { out += top + '\n'; continue; }
+    out += '| ' + pad(l, W-4) + ' |\n';
+  }
+  out += bottom + '\n';
+  if(footer) out += center(footer, W) + '\n';
+  return out;
+}
+
+// ─── BOOT SEQUENCE ───────────────────────────────────────────────────────────
+function boot() {
+  state = 'BOOT';
+  const lines = [
+    { text:'AT-BIOS (C) 1987 American Technologies Inc.', delay:300 },
+    { text:'', delay:100 },
+    { text:'CPU: AT-286 @ 8MHz', delay:150 },
+    { text:'Testing RAM: 640KB OK', delay:600 },
+    { text:'', delay:100 },
+    { text:'MOUNTING DRIVE C...', delay:400 },
+    { text:'DRIVE C: OK   [512MB]', delay:200 },
+    { text:'', delay:100 },
+    { text:'LOADING KERNAL.SYS...', delay:400 },
+    { text:'KERNAL.SYS OK', delay:200 },
+    { text:'LOADING MAIN.SYS...', delay:300 },
+    { text:'MAIN.SYS OK', delay:200 },
+    { text:'', delay:100 },
+    { text:'AT DOS Version 1.0  Ready.', delay:300 },
+    { text:'', delay:200 },
+  ];
+  let cumDelay = 0;
+  for(const l of lines) {
+    cumDelay += l.delay;
+    setTimeout(() => {
+      const d = document.createElement('div');
+      d.textContent = l.text;
+      screen.appendChild(d);
+      scrollBottom();
+    }, cumDelay);
+  }
+  setTimeout(() => {
+    clearScreen();
+    const banner = ['ATDoS  American Technologies', "Type 'help' for help, 'lnch' to run applications, or 'lnch --gui' for the launcher", ''];
+    for(const l of banner) { const d = document.createElement('div'); d.textContent = l; screen.appendChild(d); }
+    showPrompt();
+  }, cumDelay + 800);
+}
+
+// ─── COMMAND HANDLER ─────────────────────────────────────────────────────────
+function handleCmd(raw) {
+  const cmd = raw.trim();
+  cmdHistory.unshift(cmd);
+  histIdx = -1;
+
+  if(!cmd) { showPrompt(); return; }
+
+  const parts = cmd.split(/\s+/);
+  const verb  = parts[0].toLowerCase();
+  const args  = parts.slice(1);
+
+  switch(verb) {
+    case 'help':      doHelp(); break;
+    case 'cls':       clearScreen(); showPrompt(); break;
+    case 'lnch':      doLnch(args); break;
+    case 'conclr':    doConclr(args[0]||''); break;
+    case 'dir':       doDir(); break;
+    case 'notepad':   launchApp('notepad'); break;
+    case 'flmgr':     launchApp('flmgr'); break;
+    case 'opntxt':    doOpntxt(args.join(' ')); break;
+    case 'ver':       doVer(); break;
+    case 'date':      doDate(); break;
+    case 'time':      doTime(); break;
+    case 'echo':      doEcho(args.join(' ')); break;
+    case 'sysinfo':   doSysinfo(); break;
+    case 'win':       doWin(); break;
+    case 'gui':
+      append("Use 'lnch --gui' to open the graphical launcher.");
+      newline();
+      showPrompt();
+      break;
+    // App shortcuts — with or without .lx extension
+    case 'clock':     case 'clock.lx':    launchApp('clock');    break;
+    case 'netmap':    case 'netmap.lx':   launchApp('netmap');   break;
+    case 'sysstat':   case 'sysstat.lx':  launchApp('sysstat');  break;
+    case 'defrag':    case 'defrag.lx':   launchApp('defrag');   break;
+    case 'calc':      case 'calc.lx':     launchApp('calc');     break;
+    case 'weather':   case 'weather.lx':  launchApp('weather');  break;
+    case 'calendar':  case 'calendar.lx': launchApp('calendar'); break;
+    case 'mail':      case 'mail.lx':     launchApp('mail');     break;
+    case 'diskchk':   case 'diskchk.lx':  launchApp('diskchk');  break;
+    case 'crypt':     case 'crypt.lx':    launchApp('crypt');    break;
+    case 'backup':    case 'backup.lx':   launchApp('backup');   break;
+    case 'hardware':  case 'hardware.lx': launchApp('hardware'); break;
+    case 'tasks':     case 'tasks.lx':    launchApp('tasks');    break;
+    case 'ping':      case 'ping.lx':     launchApp('ping');     break;
+    case 'snake':     case 'snake.lx':    launchApp('snake');    break;
+    case 'music':     case 'music.lx':    launchApp('music');    break;
+    case 'passwd':    case 'passwd.lx':   launchApp('passwd');   break;
+    case 'paint':     case 'paint.lx':    launchApp('paint');    break;
+    case 'notepad.lx': launchApp('notepad'); break;
+    case 'flmgr.lx':   launchApp('flmgr');  break;
+    default:
+      append('Bad command or file name: ' + verb);
+      newline();
+      showPrompt();
+  }
+}
+
+function doVer() {
+  append('AT DOS Version 1.0  (C) 1987 American Technologies Inc.');
+  newline();
+  showPrompt();
+}
+
+function doDate() {
+  append('Current date: ' + new Date().toDateString());
+  newline();
+  showPrompt();
+}
+
+function doTime() {
+  append('Current time: ' + new Date().toLocaleTimeString());
+  newline();
+  showPrompt();
+}
+
+function doEcho(txt) {
+  append(txt || '');
+  newline();
+  showPrompt();
+}
+
+function doSysinfo() {
+  const lines = [
+    'AT DOS System Information',
+    '─────────────────────────────────────────────────────────────────────',
+    'OS Name    : AT DOS 1.0',
+    'OS Version : Release u01.1 O7',
+    'BIOS       : AT-BIOS (C) 1987',
+    'CPU        : AT-286 @ 8MHz',
+    'RAM        : 640 KB',
+    'Drive C:   : 512 MB',
+    'Drive A:   : 1.44 MB (Floppy)',
+    '',
+  ];
+  for(const l of lines) { append(l); newline(); }
+  newline();
+  showPrompt();
+}
+
+// ─── WIN EASTER EGG ──────────────────────────────────────────────────────────
+function doWin() {
+  state = 'BOOT'; // freeze input
+  screen.style.background = '#1a3d1a';
+  screen.style.color = '#4dff4d';
+  document.body.style.background = '#1a3d1a';
+  clearScreen();
+  append('Starting ATDows...');
+  newline();
+  append('Loading WIN.EXE...');
+  newline();
+  setTimeout(() => {
+    append('');
+    newline();
+    append('File main.js not found');
+    newline();
+    append('Exiting ATDows.');
+    newline();
+    setTimeout(() => {
+      // Restore theme and return to CMD
+      screen.style.background = '';
+      screen.style.color = '';
+      document.body.style.background = bgColor;
+      applyTheme(fgColor, bgColor);
+      clearScreen();
+      const banner = ['ATDoS  American Technologies', "Type 'help' for help, 'lnch' to run applications", ''];
+      for(const l of banner) { const d = document.createElement('div'); d.textContent = l; screen.appendChild(d); }
+      showPrompt();
+    }, 2500);
+  }, 5000);
+}
+
+// ─── GUI LAUNCHER ────────────────────────────────────────────────────────────
+const guiApps = [
+  { name:'Notepad',  app:'notepad',  glyph:'📝', desc:'Text editor'          },
+  { name:'Files',    app:'flmgr',    glyph:'📁', desc:'File manager'         },
+  { name:'Clock',    app:'clock',    glyph:'🕐', desc:'Live system clock'    },
+  { name:'Weather',  app:'weather',  glyph:'⛅', desc:'Weather forecast'     },
+  { name:'Calendar', app:'calendar', glyph:'📅', desc:'Monthly calendar'     },
+  { name:'Mail',     app:'mail',     glyph:'✉️',  desc:'Inbox viewer'         },
+  { name:'Calc',     app:'calc',     glyph:'🔢', desc:'Calculator'           },
+  { name:'Snake',    app:'snake',    glyph:'🐍', desc:'Snake game'           },
+  { name:'Paint',    app:'paint',    glyph:'🎨', desc:'ASCII canvas'         },
+  { name:'Music',    app:'music',    glyph:'🎵', desc:'Music player'         },
+  { name:'Sysstat',  app:'sysstat',  glyph:'📊', desc:'Resource monitor'     },
+  { name:'Defrag',   app:'defrag',   glyph:'💾', desc:'Disk defragmenter'    },
+  { name:'Diskchk',  app:'diskchk',  glyph:'🔍', desc:'Disk check'           },
+  { name:'Backup',   app:'backup',   glyph:'💿', desc:'Backup to A:/'        },
+  { name:'Hardware', app:'hardware', glyph:'🖥️',  desc:'Hardware info'        },
+  { name:'Netmap',   app:'netmap',   glyph:'🌐', desc:'Network map'          },
+  { name:'Tasks',    app:'tasks',    glyph:'✅', desc:'To-do list'           },
+  { name:'Crypt',    app:'crypt',    glyph:'🔒', desc:'Text encryptor'       },
+  { name:'Passwd',   app:'passwd',   glyph:'🔑', desc:'Password manager'     },
+  { name:'Ping',     app:'ping',     glyph:'📡', desc:'Network ping'         },
+];
+
+function openGui() {
+  guiMode = true;
+  state = 'GUI';
+  const launcher = document.getElementById('gui-launcher');
+  const body = document.getElementById('gui-body');
+  body.innerHTML = '';
+  for(const a of guiApps) {
+    const icon = document.createElement('div');
+    icon.className = 'gui-icon';
+    icon.title = a.desc;
+    icon.innerHTML = '<div class="gui-icon-glyph">' + a.glyph + '</div><div class="gui-label">' + a.name + '</div>';
+    icon.addEventListener('click', () => {
+      guiMode = true; // keep gui mode so ESC returns here
+      launcher.classList.remove('active');
+      launchApp(a.app);
+    });
+    icon.addEventListener('mouseenter', () => {
+      document.getElementById('gui-statusbar').textContent = a.name + '  —  ' + a.desc;
+    });
+    icon.addEventListener('mouseleave', () => {
+      document.getElementById('gui-statusbar').textContent = 'AT DOS GUI  |  Click an icon to launch  |  Press ESC to return to terminal';
+    });
+    body.appendChild(icon);
+  }
+  launcher.classList.add('active');
+  inputLayer.focus();
+}
+
+function closeGui() {
+  guiMode = false;
+  state = 'CMD';
+  document.getElementById('gui-launcher').classList.remove('active');
+  clearScreen();
+  const banner = ['ATDoS  American Technologies', "Type 'help' for help, 'lnch' to run applications, or 'lnch --gui' for the launcher", ''];
+  for(const l of banner) { const d = document.createElement('div'); d.textContent = l; screen.appendChild(d); }
+  showPrompt();
+}
+
+function returnToGui() {
+  stopAnim();
+  if(clockHandle) { clearInterval(clockHandle); clockHandle=null; }
+  state = 'GUI';
+  clearScreen();
+  document.getElementById('gui-launcher').classList.add('active');
+  inputLayer.focus();
+}
+
+function doHelp() {
+  const box = makeBox(
+    'AT DOS Help System',
+    'Type a command at the C:/> prompt and press ENTER',
+    [
+      '',
+      'COMMANDS:',
+      '  help           - Show this help screen',
+      '  cls            - Clear the screen',
+      '  ver            - Show OS version',
+      '  date           - Show current date',
+      '  time           - Show current time',
+      '  echo [text]    - Print text to screen',
+      '  sysinfo        - Show system information',
+      '  dir            - List all files',
+      '  opntxt [path]  - Open a text file',
+      '  notepad        - Text editor (Ctrl+S to save)',
+      '  flmgr          - File manager (arrows + Enter)',
+      '  lnch           - Show all .lx apps with descriptions',
+      '  lnch --gui     - Open graphical launcher',
+      '  conclr [XY]    - Change console color (e.g. conclr 0A)',
+      '  win            - ??? (try it)',
+      '',
+      'NAVIGATION:',
+      '  Arrow UP/DOWN  - Command history / move in apps',
+      '  ENTER          - Execute / confirm',
+      '  ESC            - Exit app, return to prompt (or GUI)',
+      '',
+      'APPS:',
+      '  notepad, flmgr, clock, netmap, sysstat, defrag, calc,',
+      '  weather, calendar, mail, diskchk, crypt, backup,',
+      '  hardware, tasks, paint, music, passwd, ping',
+      ''
+    ],
+    '[ESC] Close Help'
+  );
+  
+  append(box);
+  newline();
+  showPrompt();
+}
+
+function doLnch(args=[]) {
+  if(args.includes('--gui')) {
+    openGui();
+    return;
+  }
+  clearScreen();
+  const lines = [
+    document.createElement('span'),
+    document.createElement('span'),
+    document.createElement('span'),
+  ];
+  lines[0].textContent = 'Welcome to AT LNCH';
+  lines[0].className = 'orange';
+  lines[1].textContent = 'This is a preinstalled software included to AT DoS to run compatable lnch programs';
+  lines[1].className = 'orange';
+  lines[2].textContent = 'Version: Release u01.1 O7';
+  lines[2].className = 'orange';
+
+  for(const l of lines) {
+    screen.appendChild(l);
+    screen.appendChild(document.createTextNode('\n'));
+  }
+  newline();
+  append('Available .lx apps in C:/lnch/:');
+  newline();
+  const apps = ['notepad.lx','flmgr.lx','clock.lx','netmap.lx','sysstat.lx','defrag.lx',
+                 'calc.lx','weather.lx','calendar.lx','mail.lx','diskchk.lx','crypt.lx',
+                 'backup.lx','hardware.lx','tasks.lx','ping.lx','snake.lx','music.lx',
+                 'passwd.lx','paint.lx'];
+  for(const a of apps) { append('  ' + a); newline(); }
+  newline();
+  showPrompt();
+}
+
+// ─── CONCLR WIZARD ───────────────────────────────────────────────────────────
+let conclrState = 'idle'; // idle, pickFG, pickBG
+let conclrFG = '';
+
+const colorNames = {
+  '0':'Black','1':'Blue','2':'Green','3':'Aqua','4':'Red','5':'Purple',
+  '6':'Gold / Yellow','7':'White','8':'Gray','9':'Light Blue',
+  'A':'Light Green','B':'Light Aqua','C':'Light Red','D':'Light Purple',
+  'E':'Light Yellow','F':'Bright White'
+};
+
+function doConclr(code) {
+  // If called with a full 2-char code directly, apply immediately
+  if(code && code.length >= 2) {
+    const fc = colorMap[code[0].toUpperCase()];
+    const bc = colorMap[code[1].toUpperCase()];
+    if(!fc || !bc) {
+      append('Invalid color code. Type "help" and check COLOR CODES section.');
+      newline();
+      showPrompt();
+      return;
+    }
+    applyTheme(fc, bc);
+    append('Color changed to ' + code.toUpperCase() + '  (' + colorNames[code[0].toUpperCase()] + ' on ' + colorNames[code[1].toUpperCase()] + ')');
+    newline();
+    showPrompt();
+    return;
+  }
+  // Otherwise launch the interactive wizard
+  conclrState = 'pickFG';
+  conclrFG = '';
+  state = 'CONCLR';
+  cmdBuffer = '';
+  renderConclr();
+}
+
+function renderConclr() {
+  clearScreen();
+  const colorList = Object.entries(colorNames).map(([k,v]) => '  ' + k + '  =  ' + v);
+  if(conclrState === 'pickFG') {
+    const lines = [
+      '',
+      '  [ Console Color Picker ]',
+      '',
+      '  Choose a TEXT color for the console.',
+      '  For example: type  6  for Gold, or  F  for Bright White',
+      "  (Not sure? Type 'help' to see the full color list.)",
+      '',
+      '  Available colors:',
+      ...colorList,
+      '',
+      '  Type a code and press ENTER:',
+      '',
+    ];
+    const box = makeBox('conclr  --  Console Color', 'Step 1 of 2: Text Color', lines, '[ESC] Cancel');
+    append(box);
+  } else if(conclrState === 'pickBG') {
+    const lines = [
+      '',
+      '  Text color set to: ' + conclrFG + '  (' + (colorNames[conclrFG]||'?') + ')',
+      '',
+      '  Now choose a BACKGROUND color.',
+      '  Tip: Make sure it contrasts with your text color!',
+      '',
+      '  Available colors:',
+      ...colorList,
+      '',
+      '  Type a code and press ENTER:',
+      '',
+    ];
+    const box = makeBox('conclr  --  Console Color', 'Step 2 of 2: Background Color', lines, '[ESC] Cancel');
+    append(box);
+  }
+  // Show a small input line at bottom
+  const inputDiv = document.createElement('div');
+  inputDiv.id = 'conclr-input-line';
+  inputDiv.textContent = '> ' + cmdBuffer;
+  const cur = document.createElement('span');
+  cur.className = 'cursor-blink';
+  inputDiv.appendChild(cur);
+  screen.appendChild(inputDiv);
+  scrollBottom();
+}
+
+function doDir() {
+  const lines = [];
+  const dirs = ['System','User','lnch'];
+  for(const d of dirs) {
+    lines.push('[' + d + ']');
+    const entries = Object.keys(fs).filter(k => k.startsWith('C:/'+d+'/'));
+    for(const e of entries) {
+      const fname = e.split('/').pop();
+      const size  = fileSizes[fname] || '?';
+      lines.push('  ' + fname.padEnd(20) + size);
+    }
+    lines.push('');
+  }
+  const box = makeBox('AT DOS Directory Listing  C:/', null, lines, null);
+  append(box);
+  newline();
+  showPrompt();
+}
+
+function doOpntxt(path) {
+  const key = path.replace(/\\/g,'/');
+  const content = fs[key];
+  if(content === undefined) {
+    append('File not found: ' + path);
+    newline(2);
+    showPrompt();
+    return;
+  }
+  const contentLines = content.split(/\r?\n/);
+  const box = makeBox('File: ' + path, null, contentLines, '[ESC] Close');
+  append(box);
+  newline();
+  showPrompt();
+}
+
+// ─── APP LAUNCHER ─────────────────────────────────────────────────────────────
+function launchApp(name) {
+  stopAnim();
+  if(clockHandle) { clearInterval(clockHandle); clockHandle=null; }
+  currentApp = name;
+
+  switch(name) {
+    case 'notepad':  openNotepad();  break;
+    case 'flmgr':    openFlmgr();    break;
+    case 'clock':    openClock();    break;
+    case 'netmap':   openNetmap();   break;
+    case 'sysstat':  openSysstat();  break;
+    case 'defrag':   openDefrag();   break;
+    case 'calc':     openCalc();     break;
+    case 'weather':  openWeather();  break;
+    case 'calendar': openCalendar(); break;
+    case 'mail':     openMail();     break;
+    case 'diskchk':  openDiskchk();  break;
+    case 'crypt':    openCrypt();    break;
+    case 'backup':   openBackup();   break;
+    case 'hardware': openHardware(); break;
+    case 'tasks':    openTasks();    break;
+    case 'ping':     openPing();     break;
+    case 'snake':    openSnake();    break;
+    case 'music':    openMusic();    break;
+    case 'passwd':   openPasswd();   break;
+    case 'paint':    openPaint();    break;
+    default:
+      append('Unknown application: ' + name);
+      newline(2);
+      showPrompt();
+  }
+}
+
+// ─── NOTEPAD ─────────────────────────────────────────────────────────────────
+let notepadSaveInput = '';
+let notepadSaveDir   = 'User';
+let notepadSaveField = 'name';
+
+function openNotepad() {
+  state = 'NOTEPAD';
+  notepadMode = 'edit';
+  buildNotepadUI();
+}
+
+function buildNotepadUI() {
+  clearScreen();
+  const W = 70;
+  const top = '='.repeat(W);
+  const pad = (s, w) => { s = String(s); return s + ' '.repeat(Math.max(0, w-s.length)); };
+  const center = (s, w) => { const sp=Math.max(0,w-s.length); return ' '.repeat(Math.floor(sp/2))+s+' '.repeat(sp-Math.floor(sp/2)); };
+
+  append(top + '\n');
+  append('| ' + pad('AT DOS Notepad   --   Preinstalled Notepad Application', W-4) + ' |\n');
+  append(top + '\n');
+
+  // Content area — live span, no box borders, free flowing text
+  const editArea = document.createElement('div');
+  editArea.id = 'notepad-edit-area';
+  editArea.style.cssText = 'padding:6px 4px 2px 4px;min-height:3em;';
+
+  const textSpan = document.createElement('span');
+  textSpan.id = 'notepad-text';
+  textSpan.textContent = notepadContent;
+  editArea.appendChild(textSpan);
+
+  screen.appendChild(editArea);
+
+  // Classic DOS block cursor — its own div, full character-height tall rectangle
+  const cursorRow = document.createElement('div');
+  cursorRow.style.cssText = 'padding:0 4px;';
+  const cur = document.createElement('span');
+  cur.id = 'notepad-cursor';
+  cur.style.cssText = [
+    'display:inline-block',
+    'width:10px',
+    'height:1.4em',           // taller than a text cursor — classic DOS proportions
+    'background:' + fgColor,
+    'animation:blink 0.6s step-end infinite',
+    'vertical-align:bottom',
+  ].join(';');
+  cursorRow.appendChild(cur);
+  screen.appendChild(cursorRow);
+  screen.appendChild(document.createTextNode('\n'));
+
+  append(top + '\n');
+  append(center('[CTRL+S] Save   [ESC] Exit', W) + '\n');
+  scrollBottom();
+}
+
+function notepadUpdateText() {
+  const ts = document.getElementById('notepad-text');
+  if(ts) ts.textContent = notepadContent;
+  scrollBottom();
+}
+
+function renderNotepad() { buildNotepadUI(); } // alias kept for compat
+
+function handleNotepadKey(e) {
+  const key = e.key;
+
+  // ── Save dialog mode ──
+  if(notepadMode === 'saveDialog') {
+    if(key === 'Enter') {
+      const fname  = notepadSaveInput.trim() || 'untitled.txt';
+      const dir    = notepadSaveDir.trim() || 'User';
+      const validDirs = ['User','System','lnch'];
+      const safeDir = validDirs.includes(dir) ? dir : 'User';
+      const path   = 'C:/' + safeDir + '/' + fname;
+      const size   = Math.max(1, Math.ceil(notepadContent.length / 512)) + ' KB';
+
+      // Write to filesystem
+      fs[path] = notepadContent;
+      fileSizes[fname] = size;
+
+      // Add to flmgrEntries if not already there
+      const already = flmgrEntries.find(x => x.path === path);
+      if(!already) {
+        // Find the [User] dir entry index and insert after it + its children
+        let insertIdx = flmgrEntries.findIndex(x => x.label === '[' + safeDir + ']');
+        // Scan past existing children of that dir
+        let i = insertIdx + 1;
+        while(i < flmgrEntries.length && flmgrEntries[i].type !== 'dir') i++;
+        flmgrEntries.splice(i, 0, {
+          label: '  ' + fname,
+          type: 'file',
+          path: path,
+          app: null
+        });
+      }
+
+      notepadMode = 'edit';
+      notepadSaveInput = '';
+      notepadSaveDir   = 'User';
+      notepadSaveField = 'name';
+      clearScreen();
+      append('Saved: ' + path);
+      newline();
+      setTimeout(buildNotepadUI, 700);
+      return;
+    }
+    if(key === 'Tab') {
+      e.preventDefault();
+      notepadSaveField = notepadSaveField === 'name' ? 'dir' : 'name';
+      renderNotepadSaveDialog();
+      return;
+    }
+    if(key === 'Backspace') {
+      if(notepadSaveField === 'name') notepadSaveInput = notepadSaveInput.slice(0,-1);
+      else notepadSaveDir = notepadSaveDir.slice(0,-1);
+      renderNotepadSaveDialog();
+      return;
+    }
+    if(key.length === 1) {
+      if(notepadSaveField === 'name') notepadSaveInput += key;
+      else notepadSaveDir += key;
+      renderNotepadSaveDialog();
+      return;
+    }
+    return;
+  }
+
+  // ── Normal edit mode — update text span directly, no full re-render ──
+  if(key === 'Enter') {
+    notepadContent += '\n';
+    notepadUpdateText();
+    return;
+  }
+  if(key === 'Backspace') {
+    notepadContent = notepadContent.slice(0, -1);
+    notepadUpdateText();
+    return;
+  }
+  // Ctrl+S → open save dialog
+  if(key.toLowerCase() === 's' && e.ctrlKey) {
+    e.preventDefault();
+    notepadMode = 'saveDialog';
+    notepadSaveInput = '';
+    notepadSaveDir   = 'User';
+    notepadSaveField = 'name';
+    renderNotepadSaveDialog();
+    return;
+  }
+  // All printable characters type normally — including plain 's'
+  if(key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+    notepadContent += key;
+    notepadUpdateText();
+    return;
+  }
+}
+
+function renderNotepadSaveDialog() {
+  clearScreen();
+  const W = 70;
+  const top    = '='.repeat(W);
+  const pad    = (s, w) => { s = String(s); return s + ' '.repeat(Math.max(0, w - s.length)); };
+  const center = (s, w) => { const sp = Math.max(0, w-s.length); return ' '.repeat(Math.floor(sp/2))+s+' '.repeat(sp-Math.floor(sp/2)); };
+
+  append(top + '\n');
+  append('| ' + pad('AT DOS Notepad   --   Save File', W-4) + ' |\n');
+  append(top + '\n');
+  append('| ' + pad('', W-4) + ' |\n');
+  append('| ' + pad('  Enter a file name and location, then press ENTER to save.', W-4) + ' |\n');
+  append('| ' + pad('  Press TAB to switch between fields.', W-4) + ' |\n');
+  append('| ' + pad('', W-4) + ' |\n');
+
+  // File name field
+  const nameLine = document.createElement('div');
+  const nameActive = notepadSaveField === 'name';
+  nameLine.textContent = '| ' + (nameActive ? '  > File name :  ' : '    File name :  ') + notepadSaveInput;
+  if(nameActive) {
+    const cur = document.createElement('span');
+    cur.style.cssText = 'display:inline-block;width:10px;height:1.1em;background:'+fgColor+';animation:blink 0.75s step-end infinite;vertical-align:text-bottom;';
+    nameLine.appendChild(cur);
+  }
+  screen.appendChild(nameLine);
+  screen.appendChild(document.createTextNode('\n'));
+
+  append('| ' + pad('    e.g.  mynotes.txt  or  report.txt', W-4) + ' |\n');
+  append('| ' + pad('', W-4) + ' |\n');
+
+  // Directory field
+  const dirLine = document.createElement('div');
+  const dirActive = notepadSaveField === 'dir';
+  dirLine.textContent = '| ' + (dirActive ? '  > Save to    :  ' : '    Save to    :  ') + notepadSaveDir;
+  if(dirActive) {
+    const cur = document.createElement('span');
+    cur.style.cssText = 'display:inline-block;width:10px;height:1.1em;background:'+fgColor+';animation:blink 0.75s step-end infinite;vertical-align:text-bottom;';
+    dirLine.appendChild(cur);
+  }
+  screen.appendChild(dirLine);
+  screen.appendChild(document.createTextNode('\n'));
+
+  append('| ' + pad('    Valid folders:  User   System   lnch', W-4) + ' |\n');
+  append('| ' + pad('', W-4) + ' |\n');
+  append(top + '\n');
+  append(center('[TAB] Switch field   [ENTER] Save   [ESC] Cancel', W) + '\n');
+  scrollBottom();
+}
+function openFlmgr() {
+  state = 'FLMGR';
+  flmgrIdx = 0;
+  renderFlmgr();
+}
+
+function renderFlmgr() {
+  clearScreen();
+  const W = 70;
+  const top = '='.repeat(W);
+  const pad = (s, w) => { s = String(s); return s + ' '.repeat(Math.max(0, w-s.length)); };
+  const center = (s, w) => {
+    const sp = Math.max(0, w - s.length);
+    const l = Math.floor(sp/2), r = sp-l;
+    return ' '.repeat(l)+s+' '.repeat(r);
+  };
+
+  append(top + '\n');
+  append('| ' + pad('AT Files   Preinstalled Files Application', W-4) + ' |\n');
+  append(top + '\n');
+  append('| ' + pad('  NAME                            SIZE     TYPE', W-4) + ' |\n');
+  append(top + '\n');
+
+  for(let i=0; i<flmgrEntries.length; i++) {
+    const e = flmgrEntries[i];
+    const fname = e.label.trim();
+    const size  = fileSizes[fname] || (e.type==='dir' ? '<DIR>' : '');
+    const type  = e.type==='lx' ? '.lx App' : (e.type==='dir' ? 'Directory' : 'File');
+    const lineText = '| ' + pad(e.label + '  ' + String(size).padEnd(8) + ' ' + type, W-4) + ' |';
+
+    if(i === flmgrIdx) {
+      const hl = document.createElement('span');
+      hl.className = 'highlight';
+      hl.textContent = lineText + '\n';
+      screen.appendChild(hl);
+    } else {
+      append(lineText + '\n');
+    }
+  }
+
+  append(top + '\n');
+  append(center('[UP/DOWN] Navigate   [ENTER] Open .lx   [ESC] Exit', W) + '\n');
+  scrollBottom();
+}
+
+// ─── CLOCK ───────────────────────────────────────────────────────────────────
+function openClock() {
+  state = 'APP';
+  renderClock();
+  clockHandle = setInterval(renderClock, 1000);
+}
+
+function renderClock() {
+  clearScreen();
+  const now = new Date();
+  const pad2 = n => String(n).padStart(2,'0');
+  const h = pad2(now.getHours()), m = pad2(now.getMinutes()), s = pad2(now.getSeconds());
+  const bigTime = h + ':' + m + ':' + s;
+  const dateStr = now.toDateString();
+
+  const lines = [
+    '',
+    '    ████████╗██╗███╗   ███╗███████╗',
+    '       ██╔══╝██║████╗ ████║██╔════╝',
+    '       ██║   ██║██╔████╔██║█████╗  ',
+    '       ██║   ██║██║╚██╔╝██║██╔══╝  ',
+    '       ██║   ██║██║ ╚═╝ ██║███████╗',
+    '       ╚═╝   ╚═╝╚═╝     ╚═╝╚══════╝',
+    '',
+    '  Current Time: ' + bigTime,
+    '  Date:         ' + dateStr,
+    '',
+  ];
+  const box = makeBox('AT CLOCK', 'Real-Time System Clock', lines, '[ESC] Exit');
+  append(box);
+}
+
+// ─── NETMAP ──────────────────────────────────────────────────────────────────
+function openNetmap() {
+  state = 'APP';
+  clearScreen();
+  const lines = [
+    '',
+    '  [LOCAL NET: 192.168.0.x]',
+    '',
+    '      [ROUTER]---(192.168.0.1)',
+    '          |',
+    '    ┌─────┴──────┐',
+    '    |             |',
+    ' [PC-01]       [PC-02]',
+    ' 192.168.0.10  192.168.0.11',
+    '    |',
+    ' [ATDOS]',
+    ' 192.168.0.20',
+    '',
+    '  STATUS: CONNECTED',
+    '  GATEWAY: 192.168.0.1',
+    '  DNS: 8.8.8.8 / 8.8.4.4',
+    '  LATENCY: 12ms',
+    '',
+  ];
+  const box = makeBox('AT NETMAP', 'Preinstalled Network Map Application', lines, '[ESC] Exit');
+  append(box);
+}
+
+// ─── SYSSTAT ─────────────────────────────────────────────────────────────────
+function openSysstat() {
+  state = 'APP';
+  clearScreen();
+  const mkBar = (pct, w=30) => {
+    const filled = Math.round(pct/100*w);
+    return '[' + '█'.repeat(filled) + '░'.repeat(w-filled) + '] ' + pct + '%';
+  };
+  const lines = [
+    '',
+    '  CPU Usage:    ' + mkBar(23),
+    '  RAM Usage:    ' + mkBar(47),
+    '  Drive C: :    ' + mkBar(31),
+    '  Drive A: :    ' + mkBar(0),
+    '',
+    '  CPU TEMP:     38°C',
+    '  UPTIME:       00:04:12',
+    '  PROCESSES:    7',
+    '  OPEN FILES:   12',
+    '',
+    '  KERNEL:       KERNAL.SYS v1.0',
+    '  BIOS:         AT-BIOS 1987',
+    '',
+  ];
+  const box = makeBox('AT SYSSTAT', 'System Resource Monitor', lines, '[ESC] Exit');
+  append(box);
+}
+
+// ─── DEFRAG ──────────────────────────────────────────────────────────────────
+function openDefrag() {
+  state = 'APP';
+  defragPos = 0;
+  renderDefrag();
+  animHandle = setInterval(() => {
+    defragPos += 2;
+    if(defragPos > 100) defragPos = 100;
+    renderDefrag();
+    if(defragPos >= 100) stopAnim();
+  }, 120);
+}
+
+function renderDefrag() {
+  clearScreen();
+  const W = 30;
+  const filled = Math.round(defragPos/100*W);
+  const bar = '[' + '█'.repeat(filled) + '░'.repeat(W-filled) + '] ' + defragPos + '%';
+  const clusters = [];
+  for(let i=0; i<5; i++) {
+    let row='';
+    for(let j=0; j<50; j++) {
+      const idx = i*50+j;
+      const pct = defragPos/100;
+      if(idx < Math.floor(250*pct)) row += '█';
+      else if(idx < Math.floor(250*pct)+10) row += '▒';
+      else row += '░';
+    }
+    clusters.push('  ' + row);
+  }
+  const lines = [
+    '',
+    '  Drive C: Defragmentation',
+    '',
+    '  ' + bar,
+    '',
+    '  Cluster Map:',
+    ...clusters,
+    '',
+    defragPos<100 ? '  Defragmenting...' : '  Defragmentation Complete!',
+    '',
+  ];
+  const box = makeBox('AT DEFRAG', 'Disk Defragmentation Utility', lines, '[ESC] Exit');
+  append(box);
+}
+
+// ─── CALC ────────────────────────────────────────────────────────────────────
+let calcExpr = '';
+let calcResult = '';
+
+function openCalc() {
+  state = 'APP';
+  calcExpr = '';
+  calcResult = '';
+  renderCalc();
+}
+
+function renderCalc() {
+  clearScreen();
+  const W = 70;
+  const top = '='.repeat(W);
+  const pad = (s, w) => { s = String(s); return s + ' '.repeat(Math.max(0, w-s.length)); };
+  const center = (s, w) => { const sp=Math.max(0,w-s.length); const l=Math.floor(sp/2),r=sp-l; return ' '.repeat(l)+s+' '.repeat(r); };
+
+  append(top+'\n');
+  append('| '+pad('AT CALC   --   Calculator Application',W-4)+' |\n');
+  append(top+'\n');
+  append('| '+pad('',W-4)+' |\n');
+
+  // Expression line with cursor
+  const exprLine = document.createElement('div');
+  exprLine.textContent = '|   Expression:  ' + calcExpr;
+  const cur = document.createElement('span');
+  cur.style.cssText = 'display:inline-block;width:9px;height:1.1em;background:'+fgColor+';animation:blink 0.8s step-end infinite;vertical-align:text-bottom;';
+  exprLine.appendChild(cur);
+  screen.appendChild(exprLine);
+  screen.appendChild(document.createTextNode('\n'));
+
+  append('|   Result:      ' + pad(calcResult, W-20) + '|\n');
+  append('| '+pad('',W-4)+' |\n');
+  append('| '+pad('  Type a math expression and press ENTER',W-4)+' |\n');
+  append('| '+pad('  Examples:  2+2   10*5   100/4   (3+2)*8',W-4)+' |\n');
+  append('| '+pad('  BACKSPACE to delete',W-4)+' |\n');
+  append('| '+pad('',W-4)+' |\n');
+  append(top+'\n');
+  append(center('[ESC] Exit',W)+'\n');
+  scrollBottom();
+}
+
+// ─── WEATHER ─────────────────────────────────────────────────────────────────
+function openWeather() {
+  state = 'APP';
+  clearScreen();
+  const temp = Math.floor(Math.random()*15)+20;
+  const lines = [
+    '',
+    '      \\   /     Sunny',
+    '       .-.      ',
+    '    ─ (   ) ─   Temp:     ' + temp + '°C',
+    '       `-\'      Humidity:  62%',
+    '      /   \\     Wind:      12 km/h NW',
+    '',
+    '  Location:  ATDOS City',
+    '  Condition: Clear skies',
+    '  UV Index:  3 (Moderate)',
+    '',
+    '  ┌──── 5-Day Forecast ─────────────────────┐',
+    '  │ Mon  │ Tue  │ Wed  │ Thu  │ Fri           │',
+    '  │ ' + temp + '°C │ ' + (temp-2) + '°C │ ' + (temp+1) + '°C │ ' + (temp-3) + '°C │ ' + (temp+2) + '°C          │',
+    '  │  ☀   │  ⛅  │  ☀   │  🌧  │  ☀           │',
+    '  └────────────────────────────────────────┘',
+    '',
+  ];
+  const box = makeBox('AT WEATHER', 'Weather Application', lines, '[ESC] Exit');
+  append(box);
+}
+
+// ─── CALENDAR ────────────────────────────────────────────────────────────────
+function openCalendar() {
+  state = 'APP';
+  calMonth = new Date().getMonth();
+  calYear  = new Date().getFullYear();
+  renderCalendar();
+}
+
+function renderCalendar() {
+  clearScreen();
+  const months = ['January','February','March','April','May','June',
+                  'July','August','September','October','November','December'];
+  const today = new Date();
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+
+  const lines = [];
+  lines.push('');
+  lines.push('  ' + months[calMonth] + ' ' + calYear);
+  lines.push('  Su Mo Tu We Th Fr Sa');
+
+  let row = '  ' + '   '.repeat(firstDay);
+  let col = firstDay;
+  for(let d=1; d<=daysInMonth; d++) {
+    const isToday = (d===today.getDate() && calMonth===today.getMonth() && calYear===today.getFullYear());
+    row += (isToday ? '[' : ' ') + String(d).padStart(2,'0') + (isToday ? ']' : ' ');
+    col++;
+    if(col === 7 || d === daysInMonth) {
+      lines.push(row);
+      row = '  ';
+      col = 0;
+    }
+  }
+  lines.push('');
+  lines.push('  [LEFT] Prev Month   [RIGHT] Next Month');
+  lines.push('');
+
+  const box = makeBox('AT CALENDAR', 'Calendar Application', lines, '[ESC] Exit');
+  append(box);
+}
+
+// ─── MAIL ────────────────────────────────────────────────────────────────────
+function openMail() {
+  state = 'APP';
+  mailIdx = 0;
+  mailView = 'list';
+  renderMail();
+}
+
+function renderMail() {
+  clearScreen();
+  if(mailView === 'list') {
+    const lines = [''];
+    for(let i=0; i<mails.length; i++) {
+      const m = mails[i];
+      const sel = i===mailIdx ? '> ' : '  ';
+      lines.push(sel + '[' + m.from + ']  ' + m.subject);
+    }
+    lines.push('');
+    lines.push('  [UP/DOWN] Select   [ENTER] Open   [ESC] Exit');
+    lines.push('');
+    const box = makeBox('AT MAIL', 'Inbox - 3 Messages', lines, '[ESC] Exit');
+    append(box);
+  } else {
+    const m = mails[mailIdx];
+    const bodyLines = m.body.split('\n');
+    const lines = [
+      '',
+      '  From:    ' + m.from,
+      '  Subject: ' + m.subject,
+      '  ─────────────────────────────────────────────────────────────────',
+      '',
+      ...bodyLines.map(l=>'  '+l),
+      '',
+    ];
+    const box = makeBox('AT MAIL - Reading', m.subject, lines, '[ESC] Back to Inbox');
+    append(box);
+  }
+}
+
+// ─── DISKCHK ─────────────────────────────────────────────────────────────────
+function openDiskchk() {
+  state = 'APP';
+  clearScreen();
+  const lines = [
+    '',
+    '  Scanning Drive C: ...',
+    '',
+    '  Total Sectors:    1,048,576',
+    '  Used Sectors:     324,780',
+    '  Free Sectors:     723,796',
+    '  Bad Sectors:      0',
+    '',
+    '  Total Blocks:     8,192',
+    '  Used Blocks:      2,537',
+    '  Free Blocks:      5,655',
+    '',
+    '  File System:      AT-FAT12',
+    '  Volume Label:     ATDOS_C',
+    '  Serial Number:    1987-0001',
+    '',
+    '  Status: NO ERRORS FOUND ✓',
+    '',
+  ];
+  const box = makeBox('AT DISKCHK', 'Disk Check Utility', lines, '[ESC] Exit');
+  append(box);
+}
+
+// ─── CRYPT ───────────────────────────────────────────────────────────────────
+function openCrypt() {
+  state = 'APP';
+  cryptMode = 'idle';
+  cryptInput = '';
+  renderCrypt();
+}
+
+function renderCrypt() {
+  clearScreen();
+  const W = 70;
+  const top = '='.repeat(W);
+  const pad = (s, w) => { s = String(s); return s + ' '.repeat(Math.max(0, w-s.length)); };
+  const center = (s, w) => { const sp=Math.max(0,w-s.length); const l=Math.floor(sp/2),r=sp-l; return ' '.repeat(l)+s+' '.repeat(r); };
+
+  append(top+'\n');
+  append('| '+pad('AT CRYPT   --   Text Obfuscation Utility',W-4)+' |\n');
+  append(top+'\n');
+  append('| '+pad('  Simple ROT47 text obfuscation tool.',W-4)+' |\n');
+  append('| '+pad('  Type a string and press ENTER to encrypt/decrypt.',W-4)+' |\n');
+  append('| '+pad('',W-4)+' |\n');
+
+  // Input line with cursor
+  const inputLine = document.createElement('div');
+  inputLine.textContent = '|   Input:   ' + cryptInput;
+  const cur = document.createElement('span');
+  cur.style.cssText = 'display:inline-block;width:9px;height:1.1em;background:'+fgColor+';animation:blink 0.8s step-end infinite;vertical-align:text-bottom;';
+  inputLine.appendChild(cur);
+  screen.appendChild(inputLine);
+  screen.appendChild(document.createTextNode('\n'));
+
+  append('|   Output:  '+pad(cryptInput ? doCryptOp(cryptInput) : '', W-14)+'|\n');
+  append('| '+pad('',W-4)+' |\n');
+  append('| '+pad('  BACKSPACE to delete   ENTER to process',W-4)+' |\n');
+  append('| '+pad('',W-4)+' |\n');
+  append(top+'\n');
+  append(center('[ESC] Exit',W)+'\n');
+  scrollBottom();
+}
+
+function doCryptOp(s) {
+  return s.split('').map(c => {
+    const code = c.charCodeAt(0);
+    if(code >= 32 && code <= 126) return String.fromCharCode(((code - 32 + 47) % 95) + 32);
+    return c;
+  }).join('');
+}
+
+// ─── BACKUP ──────────────────────────────────────────────────────────────────
+function openBackup() {
+  state = 'APP';
+  backupPos = 0;
+  renderBackup();
+  animHandle = setInterval(() => {
+    backupPos += 3;
+    if(backupPos > 100) backupPos = 100;
+    renderBackup();
+    if(backupPos >= 100) stopAnim();
+  }, 150);
+}
+
+const backupFiles = ['kernal.sys','main.sys','bios.sys','ijconfig.sys',
+                     'ftcdiag.sys','hlp.sys','test1.txt','notes.txt'];
+
+function renderBackup() {
+  clearScreen();
+  const W = 30;
+  const filled = Math.round(backupPos/100*W);
+  const bar = '[' + '█'.repeat(filled) + '░'.repeat(W-filled) + '] ' + backupPos + '%';
+  const fileIdx = Math.min(Math.floor(backupPos/100*backupFiles.length), backupFiles.length-1);
+  const curFile = backupFiles[fileIdx];
+  const lines = [
+    '',
+    '  Backing up C:/ --> A:/',
+    '',
+    '  ' + bar,
+    '',
+    '  Current file: ' + curFile,
+    '  Files backed: ' + Math.min(fileIdx+1, backupFiles.length) + ' / ' + backupFiles.length,
+    '',
+    backupPos<100 ? '  Backup in progress...' : '  Backup Complete! Drive A:/ ready.',
+    '',
+  ];
+  const box = makeBox('AT BACKUP', 'File Backup Utility -- Destination: A:/', lines, '[ESC] Exit');
+  append(box);
+}
+
+// ─── HARDWARE ────────────────────────────────────────────────────────────────
+function openHardware() {
+  state = 'APP';
+  clearScreen();
+  const lines = [
+    '',
+    '  ── Processor ──────────────────────────────────',
+    '  Model:       AT-286 Processor',
+    '  Speed:       8 MHz',
+    '  Cores:       1',
+    '  Cache:       64 KB',
+    '',
+    '  ── Memory ─────────────────────────────────────',
+    '  Installed:   640 KB',
+    '  Usable:      632 KB',
+    '  Type:        DRAM',
+    '',
+    '  ── Storage ────────────────────────────────────',
+    '  Drive C::    512 MB HDD  (AT-FAT12)',
+    '  Drive A::    1.44 MB Floppy',
+    '',
+    '  ── Display ────────────────────────────────────',
+    '  Monitor:     AT Monochrome Display (80x25)',
+    '  Adapter:     AT Graphics Array',
+    '',
+    '  ── Other ──────────────────────────────────────',
+    '  Keyboard:    AT 84-Key',
+    '  BIOS:        AT-BIOS (C) 1987',
+    '',
+  ];
+  const box = makeBox('AT HARDWARE', 'Hardware Detection Report', lines, '[ESC] Exit');
+  append(box);
+}
+
+// ─── TASKS ───────────────────────────────────────────────────────────────────
+let taskInput = '';
+let taskMode = 'list'; // list / add
+
+function openTasks() {
+  state = 'APP';
+  taskMode = 'list';
+  taskInput = '';
+  renderTasks();
+}
+
+function renderTasks() {
+  clearScreen();
+  const lines = [''];
+  if(tasks.length === 0) {
+    lines.push('  No tasks yet. Press [A] to add a task.');
+  } else {
+    for(let i=0; i<tasks.length; i++) {
+      const t = tasks[i];
+      lines.push('  [' + (t.done ? 'X' : ' ') + '] ' + t.text + '   (press ' + (i+1) + ' to toggle)');
+    }
+  }
+  lines.push('');
+  if(taskMode === 'add') {
+    lines.push('  New task: ' + taskInput + '\u2588');
+    lines.push('  [ENTER] Save   [ESC] Cancel');
+  } else {
+    lines.push('  [A] Add Task   [1-9] Toggle Done   [ESC] Exit');
+  }
+  lines.push('');
+  const box = makeBox('AT TASKS', 'To-Do List Manager', lines, '[ESC] Exit');
+  append(box);
+}
+
+// ─── STOP ANIMATION ──────────────────────────────────────────────────────────
+function stopAnim() {
+  if(animHandle)  { clearInterval(animHandle);  animHandle=null;  }
+  if(pingHandle)  { clearInterval(pingHandle);  pingHandle=null;  }
+  if(snakeHandle) { clearInterval(snakeHandle); snakeHandle=null; }
+  if(musicHandle) { clearInterval(musicHandle); musicHandle=null; }
+}
+
+// ─── KEY HANDLING ─────────────────────────────────────────────────────────────
+document.addEventListener('keydown', function(e) {
+  const key = e.key;
+
+  // Only prevent scroll-causing defaults in CMD/BOOT/CONCLR — never in apps that need arrows
+  if(['Backspace','Space','Tab'].includes(key)) e.preventDefault();
+  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(key) && (state==='CMD'||state==='BOOT'||state==='CONCLR')) e.preventDefault();
+
+  // ESC always returns to CMD (or GUI if in gui mode)
+  if(key === 'Escape') {
+    // If in notepad save dialog, just cancel back to editing
+    if(state === 'NOTEPAD' && notepadMode === 'saveDialog') {
+      notepadMode = 'edit';
+      renderNotepad();
+      return;
+    }
+    // passwd change sub-mode: cancel back to menu, not all the way out
+    if(state === 'APP' && currentApp === 'passwd' && passwdMode === 'change') {
+      passwdMode = 'menu'; passwdInput = ''; renderPasswd(); return;
+    }
+    // mail reading: back to list
+    if(state === 'APP' && currentApp === 'mail' && mailView === 'read') {
+      mailView = 'list'; renderMail(); return;
+    }
+    stopAnim();
+    if(clockHandle) { clearInterval(clockHandle); clockHandle=null; }
+    cryptMode = 'idle'; cryptInput = '';
+    calcExpr = ''; calcResult = '';
+    taskMode = 'list'; taskInput = '';
+    mailView = 'list';
+    conclrState = 'idle'; cmdBuffer = '';
+    if(guiMode) {
+      returnToGui();
+    } else {
+      state = 'CMD';
+      clearScreen();
+      const banner = ['ATDoS  American Technologies', "Type 'help' for help, 'lnch' to run applications, or 'lnch --gui' for the launcher", ''];
+      for(const l of banner) { const d = document.createElement('div'); d.textContent = l; screen.appendChild(d); }
+      showPrompt();
+    }
+    return;
+  }
+
+  if(state === 'BOOT') return;
+
+  if(state === 'GUI')       return; // GUI handled by mouse clicks
+  if(state === 'CMD')       handleCMDKey(e);
+  else if(state === 'CONCLR')  handleConclrKey(e);
+  else if(state === 'NOTEPAD') handleNotepadKey(e);
+  else if(state === 'FLMGR')   handleFlmgrKey(e);
+  else if(state === 'APP')     handleAppKey(e);
+});
+
+function handleConclrKey(e) {
+  const key = e.key;
+  // Update the input display
+  const inputLine = document.getElementById('conclr-input-line');
+
+  if(key === 'Enter') {
+    const code = cmdBuffer.trim().toUpperCase();
+    cmdBuffer = '';
+    if(conclrState === 'pickFG') {
+      if(!colorMap[code]) {
+        // Invalid — show error briefly then re-render
+        clearScreen();
+        append('Invalid code "' + code + '". Please enter a single hex digit (0-F).');
+        newline();
+        setTimeout(() => { renderConclr(); }, 900);
+        return;
+      }
+      conclrFG = code;
+      conclrState = 'pickBG';
+      renderConclr();
+    } else if(conclrState === 'pickBG') {
+      if(!colorMap[code]) {
+        clearScreen();
+        append('Invalid code "' + code + '". Please enter a single hex digit (0-F).');
+        newline();
+        setTimeout(() => { renderConclr(); }, 900);
+        return;
+      }
+      applyTheme(colorMap[conclrFG], colorMap[code]);
+      conclrState = 'idle';
+      state = 'CMD';
+      clearScreen();
+      const banner = ['ATDoS  American Technologies', "Type 'help' for help, 'lnch' to run applications", ''];
+      for(const l of banner) { const d = document.createElement('div'); d.textContent = l; screen.appendChild(d); }
+      append('Color changed!  Text: ' + colorNames[conclrFG] + '  /  Background: ' + colorNames[code]);
+      newline();
+      showPrompt();
+    }
+    return;
+  }
+
+  if(key === 'Backspace') {
+    cmdBuffer = cmdBuffer.slice(0,-1);
+  } else if(key.length === 1) {
+    if(cmdBuffer.length < 1) cmdBuffer += key; // Only 1 char needed
+  }
+
+  // Update inline display
+  const inputLine2 = document.getElementById('conclr-input-line');
+  if(inputLine2) {
+    // Remove old cursor
+    const cur = inputLine2.querySelector('.cursor-blink');
+    if(cur) cur.remove();
+    inputLine2.textContent = '> ' + cmdBuffer;
+    const cur2 = document.createElement('span');
+    cur2.className = 'cursor-blink';
+    inputLine2.appendChild(cur2);
+  }
+}
+
+function handleCMDKey(e) {
+  const key = e.key;
+
+  if(key === 'Enter') {
+    const cmd = cmdBuffer;
+    finalizePrompt(cmd);
+    handleCmd(cmd);
+    return;
+  }
+
+  if(key === 'Backspace') {
+    if(cmdBuffer.length > 0) {
+      cmdBuffer = cmdBuffer.slice(0,-1);
+      updateCmdDisplay();
+    }
+    return;
+  }
+
+  if(key === 'ArrowUp') {
+    if(cmdHistory.length > 0) {
+      histIdx = Math.min(histIdx+1, cmdHistory.length-1);
+      cmdBuffer = cmdHistory[histIdx];
+      updateCmdDisplay();
+    }
+    return;
+  }
+
+  if(key === 'ArrowDown') {
+    histIdx = Math.max(histIdx-1, -1);
+    cmdBuffer = histIdx >= 0 ? cmdHistory[histIdx] : '';
+    updateCmdDisplay();
+    return;
+  }
+
+  if(key.length === 1) {
+    cmdBuffer += key;
+    updateCmdDisplay();
+  }
+}
+
+function handleFlmgrKey(e) {
+  const key = e.key;
+
+  if(key === 'ArrowUp') {
+    flmgrIdx = Math.max(0, flmgrIdx-1);
+    renderFlmgr();
+  } else if(key === 'ArrowDown') {
+    flmgrIdx = Math.min(flmgrEntries.length-1, flmgrIdx+1);
+    renderFlmgr();
+  } else if(key === 'Enter') {
+    const entry = flmgrEntries[flmgrIdx];
+    if(entry.type === 'lx' && entry.app) {
+      clearScreen();
+      launchApp(entry.app);
+    } else if((entry.type === 'file') && entry.path) {
+      // Open text/config files in a viewer
+      doOpntxt(entry.path);
+    }
+  }
+}
+
+function handleOriginalAppKey(e) {
+  const key = e.key;
+
+  // Calendar navigation
+  if(currentApp === 'calendar') {
+    if(key === 'ArrowLeft')  { calMonth--; if(calMonth<0){calMonth=11;calYear--;} renderCalendar(); }
+    if(key === 'ArrowRight') { calMonth++; if(calMonth>11){calMonth=0;calYear++;} renderCalendar(); }
+    return;
+  }
+
+  // Mail navigation
+  if(currentApp === 'mail') {
+    if(mailView === 'list') {
+      if(key === 'ArrowUp')   { mailIdx = Math.max(0,mailIdx-1); renderMail(); }
+      if(key === 'ArrowDown') { mailIdx = Math.min(mails.length-1,mailIdx+1); renderMail(); }
+      if(key === 'Enter')     { mailView='read'; renderMail(); }
+    } else {
+      if(key === 'Escape')    { mailView='list'; renderMail(); return; }
+    }
+    return;
+  }
+
+  // Calc
+  if(currentApp === 'calc') {
+    if(key === 'Enter') {
+      try { calcResult = String(eval(calcExpr)); }
+      catch(err) { calcResult = 'Error'; }
+      renderCalc();
+      return;
+    }
+    if(key === 'Backspace') { calcExpr = calcExpr.slice(0,-1); renderCalc(); return; }
+    if(key.length === 1 && '0123456789+-*/().% '.includes(key)) {
+      calcExpr += key; renderCalc();
+    }
+    return;
+  }
+
+  // Crypt
+  if(currentApp === 'crypt') {
+    if(key === 'Enter')     { renderCrypt(); return; }
+    if(key === 'Backspace') { cryptInput = cryptInput.slice(0,-1); renderCrypt(); return; }
+    if(key.length === 1)    { cryptInput += key; renderCrypt(); return; }
+    return;
+  }
+
+  // Tasks
+  if(currentApp === 'tasks') {
+    if(taskMode === 'add') {
+      if(key === 'Enter') {
+        if(taskInput.trim()) tasks.push({text:taskInput.trim(), done:false});
+        taskInput = ''; taskMode = 'list'; renderTasks(); return;
+      }
+      if(key === 'Escape')    { taskMode='list'; taskInput=''; renderTasks(); return; }
+      if(key === 'Backspace') { taskInput=taskInput.slice(0,-1); renderTasks(); return; }
+      if(key.length === 1)    { taskInput+=key; renderTasks(); return; }
+      return;
+    }
+    if(key.toLowerCase() === 'a') { taskMode='add'; taskInput=''; renderTasks(); return; }
+    if(key >= '1' && key <= '9') {
+      const idx = parseInt(key)-1;
+      if(tasks[idx]) { tasks[idx].done = !tasks[idx].done; renderTasks(); }
+      return;
+    }
+    return;
+  }
+}
+
+// ─── PING ────────────────────────────────────────────────────────────────────
+let pingHandle = null;
+let pingLines  = [];
+let pingCount  = 0;
+let pingHost   = 'atdos.local';
+
+function openPing() {
+  state = 'APP';
+  pingLines = [];
+  pingCount = 0;
+  pingHost  = 'atdos.local';
+  renderPing();
+  pingHandle = setInterval(() => {
+    if(pingCount >= 6) { clearInterval(pingHandle); pingHandle=null; pingLines.push('  --- Ping complete. 6 packets sent, 6 received, 0% loss ---'); renderPing(); return; }
+    const ms = Math.floor(Math.random()*18)+4;
+    pingLines.push('  Reply from 192.168.0.1: bytes=32 time=' + ms + 'ms TTL=64');
+    pingCount++;
+    renderPing();
+  }, 700);
+}
+
+function renderPing() {
+  clearScreen();
+  const lines = ['', '  Pinging ' + pingHost + ' [192.168.0.1] with 32 bytes of data:', '', ...pingLines, ''];
+  if(pingCount < 6 && pingHandle) lines.push('  Waiting...');
+  const box = makeBox('AT PING', 'Network Ping Utility', lines, '[ESC] Exit');
+  append(box);
+}
+
+// ─── SNAKE ───────────────────────────────────────────────────────────────────
+let snakeHandle = null;
+let snakeGrid   = [];
+let snakeBody   = [];
+let snakeDir    = {x:1,y:0};
+let snakeFood   = {x:10,y:5};
+let snakeScore  = 0;
+let snakeDead   = false;
+const SW = 30, SH = 14;
+
+function openSnake() {
+  state = 'APP';
+  snakeBody  = [{x:5,y:7},{x:4,y:7},{x:3,y:7}];
+  snakeDir   = {x:1,y:0};
+  snakeScore = 0;
+  snakeDead  = false;
+  placeSnakeFood();
+  renderSnake();
+  snakeHandle = setInterval(() => {
+    if(snakeDead) return;
+    const head = {x: snakeBody[0].x + snakeDir.x, y: snakeBody[0].y + snakeDir.y};
+    // Wall collision
+    if(head.x<0||head.x>=SW||head.y<0||head.y>=SH) { snakeDead=true; renderSnake(); return; }
+    // Self collision
+    if(snakeBody.some(s=>s.x===head.x&&s.y===head.y)) { snakeDead=true; renderSnake(); return; }
+    snakeBody.unshift(head);
+    if(head.x===snakeFood.x && head.y===snakeFood.y) { snakeScore+=10; placeSnakeFood(); }
+    else snakeBody.pop();
+    renderSnake();
+  }, 180);
+}
+
+function placeSnakeFood() {
+  do { snakeFood={x:Math.floor(Math.random()*SW),y:Math.floor(Math.random()*SH)}; }
+  while(snakeBody.some(s=>s.x===snakeFood.x&&s.y===snakeFood.y));
+}
+
+function renderSnake() {
+  clearScreen();
+  const W=70;
+  const top='='.repeat(W);
+  const pad=(s,w)=>{s=String(s);return s+' '.repeat(Math.max(0,w-s.length));};
+  const center=(s,w)=>{const sp=Math.max(0,w-s.length);return ' '.repeat(Math.floor(sp/2))+s+' '.repeat(sp-Math.floor(sp/2));};
+  append(top+'\n');
+  append('| '+pad('AT SNAKE   Score: '+snakeScore+(snakeDead?'   *** GAME OVER! Press R to restart ***':''),W-4)+' |\n');
+  append(top+'\n');
+  // Grid
+  for(let y=0;y<SH;y++){
+    let row='';
+    for(let x=0;x<SW;x++){
+      if(snakeBody[0].x===x&&snakeBody[0].y===y) row+='█';
+      else if(snakeBody.some((s,i)=>i>0&&s.x===x&&s.y===y)) row+='▓';
+      else if(snakeFood.x===x&&snakeFood.y===y) row+='●';
+      else row+=' ';
+    }
+    append('| '+pad(row,W-4)+' |\n');
+  }
+  append(top+'\n');
+  append(center('[ARROW KEYS] Move   [R] Restart   [ESC] Exit',W)+'\n');
+  scrollBottom();
+}
+
+// ─── MUSIC ───────────────────────────────────────────────────────────────────
+let musicHandle  = null;
+let musicPlaying = false;
+let musicTick    = 0;
+let musicTrack   = 0;
+const musicTracks = [
+  { title:'DOS Theme',       artist:'AT Sound System', bars:'▪▫▪▪▫▫▪▪▪▫▪▫▪▪▫▫▪▪' },
+  { title:'Boot Sequence',   artist:'AT Sound System', bars:'▫▪▫▫▪▪▫▫▫▪▫▪▫▫▪▪▫▫' },
+  { title:'Kernal March',    artist:'AT Sound System', bars:'▪▪▪▫▫▪▪▫▪▪▫▫▪▪▫▫▪▪' },
+];
+
+function openMusic() {
+  state = 'APP';
+  musicPlaying = false;
+  musicTick    = 0;
+  renderMusic();
+}
+
+function renderMusic() {
+  clearScreen();
+  const t = musicTracks[musicTrack];
+  const totalLen = 40;
+  const pos = musicPlaying ? (musicTick % totalLen) : 0;
+  const bar = '[' + '━'.repeat(pos) + '●' + '─'.repeat(Math.max(0,totalLen-pos-1)) + ']';
+  const viz  = musicPlaying ? generateViz() : '  (stopped)';
+
+  const lines = [
+    '',
+    '  ♪  Now Playing: ' + t.title,
+    '     Artist:      ' + t.artist,
+    '',
+    '  ' + bar,
+    '',
+    '  Visualizer:',
+    '  ' + viz,
+    '',
+    '  Track ' + (musicTrack+1) + ' / ' + musicTracks.length,
+    '',
+    '  [P] Play/Pause   [N] Next Track   [ESC] Exit',
+    '',
+  ];
+  const box = makeBox('AT MUSIC', 'AT Sound System Player', lines, '[ESC] Exit');
+  append(box);
+}
+
+function generateViz() {
+  const chars = '▁▂▃▄▅▆▇█';
+  let s='';
+  for(let i=0;i<24;i++) s+=chars[Math.floor(Math.random()*chars.length)];
+  return s;
+}
+
+// ─── PASSWD ──────────────────────────────────────────────────────────────────
+let passwdMode  = 'menu'; // menu, change, view
+let passwdStep  = 0;      // 0=old pw, 1=new pw, 2=confirm
+let passwdInput = '';
+let passwdOld   = '';
+let passwdNew   = '';
+let passwdCurrent = 'admin123';
+const passwdUsers = [{user:'admin',level:'Administrator'},{user:'guest',level:'Standard User'}];
+
+function openPasswd() {
+  state = 'APP';
+  passwdMode  = 'menu';
+  passwdStep  = 0;
+  passwdInput = '';
+  renderPasswd();
+}
+
+function renderPasswd() {
+  clearScreen();
+  let lines = [''];
+  if(passwdMode === 'menu') {
+    lines.push('  System Users:');
+    lines.push('');
+    for(const u of passwdUsers) lines.push('  ' + u.user.padEnd(16) + u.level);
+    lines.push('');
+    lines.push('  [C] Change Password   [ESC] Exit');
+    lines.push('');
+  } else if(passwdMode === 'change') {
+    const prompts = ['  Enter current password:','  Enter new password:','  Confirm new password:'];
+    lines.push(prompts[passwdStep]);
+    // Show masked input
+    const maskLine = document.createElement('div');
+    maskLine.textContent = '  > ' + '*'.repeat(passwdInput.length);
+    const cur = document.createElement('span');
+    cur.style.cssText='display:inline-block;width:9px;height:1.1em;background:'+fgColor+';animation:blink 0.7s step-end infinite;vertical-align:text-bottom;';
+    maskLine.appendChild(cur);
+    lines.push(''); // placeholder
+    const box = makeBox('AT PASSWD', 'Password Manager', lines, '[ENTER] Confirm   [ESC] Cancel');
+    append(box);
+    // Append the mask line manually after the box
+    screen.appendChild(maskLine);
+    screen.appendChild(document.createTextNode('\n'));
+    scrollBottom();
+    return;
+  }
+  const box = makeBox('AT PASSWD', 'Password Manager', lines, '[ESC] Exit');
+  append(box);
+}
+
+// ─── PAINT ───────────────────────────────────────────────────────────────────
+const PW=26, PH=12;
+let paintGrid    = [];
+let paintCursorX = 0, paintCursorY = 0;
+let paintChar    = '█';
+let paintMode    = 'draw'; // draw or erase
+const paintChars = ['█','▓','▒','░','#','*','+','●','○','◆','◇','▲'];
+let paintCharIdx = 0;
+
+function openPaint() {
+  state = 'APP';
+  if(paintGrid.length === 0) {
+    for(let y=0;y<PH;y++){paintGrid[y]=[];for(let x=0;x<PW;x++)paintGrid[y][x]=' ';}
+  }
+  paintCursorX = 0; paintCursorY = 0;
+  renderPaint();
+}
+
+function renderPaint() {
+  clearScreen();
+  const W=70;
+  const top='='.repeat(W);
+  const pad=(s,w)=>{s=String(s);return s+' '.repeat(Math.max(0,w-s.length));};
+  const center=(s,w)=>{const sp=Math.max(0,w-s.length);return ' '.repeat(Math.floor(sp/2))+s+' '.repeat(sp-Math.floor(sp/2));};
+  append(top+'\n');
+  append('| '+pad('AT PAINT   Char: ['+paintChar+']   Mode: '+(paintMode==='draw'?'DRAW':'ERASE'),W-4)+' |\n');
+  append(top+'\n');
+
+  for(let y=0;y<PH;y++){
+    let row='';
+    for(let x=0;x<PW;x++){
+      if(x===paintCursorX && y===paintCursorY) row+='▌';
+      else row+=paintGrid[y][x];
+    }
+    // pad to box width
+    append('| '+pad('  '+row,W-4)+' |\n');
+  }
+
+  append(top+'\n');
+  append(center('[ARROWS] Move  [SPACE] Draw/Erase  [C] Char  [E] Toggle Erase  [X] Clear  [ESC] Exit',W)+'\n');
+  scrollBottom();
+}
+
+// ─── HANDLE NEW APP KEYS ─────────────────────────────────────────────────────
+function handleAppKey(e) {
+  const key = e.key;
+
+  if(currentApp === 'ping') {
+    return;
+  }
+
+  if(currentApp === 'snake') {
+    if(key==='ArrowUp'    && snakeDir.y===0) { snakeDir={x:0,y:-1}; return; }
+    if(key==='ArrowDown'  && snakeDir.y===0) { snakeDir={x:0,y:1};  return; }
+    if(key==='ArrowLeft'  && snakeDir.x===0) { snakeDir={x:-1,y:0}; return; }
+    if(key==='ArrowRight' && snakeDir.x===0) { snakeDir={x:1,y:0};  return; }
+    if(key.toLowerCase()==='r') {
+      clearInterval(snakeHandle); snakeHandle=null;
+      openSnake(); return;
+    }
+    return;
+  }
+
+  if(currentApp === 'music') {
+    if(key.toLowerCase()==='p') {
+      musicPlaying = !musicPlaying;
+      if(musicPlaying) {
+        musicHandle = setInterval(()=>{ musicTick++; renderMusic(); }, 300);
+      } else {
+        clearInterval(musicHandle); musicHandle=null;
+      }
+      renderMusic(); return;
+    }
+    if(key.toLowerCase()==='n') {
+      musicTrack=(musicTrack+1)%musicTracks.length;
+      musicTick=0;
+      if(musicHandle){clearInterval(musicHandle);musicHandle=null;}
+      if(musicPlaying) musicHandle=setInterval(()=>{musicTick++;renderMusic();},300);
+      renderMusic(); return;
+    }
+    return;
+  }
+
+  if(currentApp === 'passwd') {
+    if(passwdMode === 'menu') {
+      if(key.toLowerCase()==='c') { passwdMode='change'; passwdStep=0; passwdInput=''; renderPasswd(); return; }
+      return;
+    }
+    if(passwdMode === 'change') {
+      if(key==='Escape') { passwdMode='menu'; passwdInput=''; renderPasswd(); return; }
+      if(key==='Enter') {
+        if(passwdStep===0) {
+          if(passwdInput!==passwdCurrent){ clearScreen();append('  Incorrect current password.');newline();setTimeout(()=>{passwdMode='menu';renderPasswd();},900);passwdInput='';return; }
+          passwdOld=passwdInput; passwdInput=''; passwdStep=1; renderPasswd();
+        } else if(passwdStep===1) {
+          passwdNew=passwdInput; passwdInput=''; passwdStep=2; renderPasswd();
+        } else {
+          if(passwdInput!==passwdNew){ clearScreen();append('  Passwords do not match.');newline();setTimeout(()=>{passwdStep=1;passwdInput='';renderPasswd();},900);return; }
+          passwdCurrent=passwdNew; passwdMode='menu'; passwdInput='';
+          clearScreen();append('  Password changed successfully.');newline();setTimeout(renderPasswd,900);
+        }
+        return;
+      }
+      if(key==='Backspace') { passwdInput=passwdInput.slice(0,-1); renderPasswd(); return; }
+      if(key.length===1) { passwdInput+=key; renderPasswd(); return; }
+      return;
+    }
+    return;
+  }
+
+  if(currentApp === 'paint') {
+    e.preventDefault();
+    if(key==='ArrowUp')    { paintCursorY=Math.max(0,paintCursorY-1); }
+    if(key==='ArrowDown')  { paintCursorY=Math.min(PH-1,paintCursorY+1); }
+    if(key==='ArrowLeft')  { paintCursorX=Math.max(0,paintCursorX-1); }
+    if(key==='ArrowRight') { paintCursorX=Math.min(PW-1,paintCursorX+1); }
+    if(key===' ') {
+      paintGrid[paintCursorY][paintCursorX] = paintMode==='draw' ? paintChar : ' ';
+    }
+    if(key.toLowerCase()==='e') { paintMode=paintMode==='draw'?'erase':'draw'; }
+    if(key.toLowerCase()==='c') { paintCharIdx=(paintCharIdx+1)%paintChars.length; paintChar=paintChars[paintCharIdx]; }
+    if(key.toLowerCase()==='x') { for(let y=0;y<PH;y++)for(let x=0;x<PW;x++)paintGrid[y][x]=' '; }
+    renderPaint();
+    return;
+  }
+
+  // All other apps (calendar, mail, calc, crypt, tasks, etc.)
+  handleOriginalAppKey(e);
+}
+
+// ─── FOCUS MANAGEMENT ────────────────────────────────────────────────────────
+document.addEventListener('click', () => inputLayer.focus());
+window.addEventListener('focus',   () => inputLayer.focus());
+inputLayer.focus();
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+const baseTheme = { fg:'#ffffff', bg:'#000000' };
+const appThemes = {
+  clock:   { fg:'#7fe7ff', bg:'#07131d' },
+  defrag:  { fg:'#8dffb2', bg:'#08150d' },
+  weather: { fg:'#ffd66e', bg:'#1a1026' },
+  snake:   { fg:'#ff8f70', bg:'#160d11' },
+  paint:   { fg:'#f5f5f5', bg:'#111111' }
+};
+let clockMode = 'digital';
+let defragMode = 'quick';
+let weatherHandle = null;
+let weatherIndex = 0;
+let paintMouseDown = false;
+const weatherLocations = [
+  { city:'Colombo', region:'Sri Lanka', temp:31, humidity:74, wind:16, condition:'Humid sun', tracked:true },
+  { city:'Tokyo', region:'Japan', temp:19, humidity:59, wind:11, condition:'Bright haze', tracked:false },
+  { city:'London', region:'UK', temp:14, humidity:68, wind:20, condition:'Cloud bands', tracked:true },
+  { city:'New York', region:'USA', temp:22, humidity:57, wind:14, condition:'Clear blocks', tracked:false }
+];
+const uiEnhancementStyle = document.createElement('style');
+uiEnhancementStyle.textContent = `
+html, body, #screen, #gui-launcher, #gui-titlebar, #gui-titlebar-close, .gui-icon { cursor: default !important; }
+body.cursor-app-active, body.cursor-app-active * { cursor: var(--cursor-default) !important; }
+#gui-launcher { background: #ffffff !important; color: #000000 !important; }
+#gui-titlebar { background: #ffffff !important; color: #000000 !important; border: 2px solid #000000 !important; border-bottom: none !important; }
+#gui-titlebar-close { background: #ffffff !important; color: #000000 !important; border: 2px solid #000000 !important; box-shadow: none !important; }
+#gui-titlebar-close:hover { background: #000000 !important; color: #ffffff !important; }
+#gui-body, #gui-statusbar { background: #ffffff !important; color: #000000 !important; border-color: #000000 !important; }
+.gui-icon:hover { background: #f1f1f1 !important; border: 2px solid #000000 !important; }
+.gui-icon:hover .gui-label { color: #000000 !important; }
+.gui-icon-glyph { width: 44px; height: 44px; display: grid; place-items: center; border: 2px solid #000000; background: #ffffff; color: #000000; font-size: 14px !important; font-weight: 700; letter-spacing: 1px; }
+.app-shell { display: flex; flex-direction: column; gap: 14px; min-height: 100%; color: var(--fg, #fff); }
+.app-header { border: 2px solid currentColor; padding: 10px 12px; background: rgba(255,255,255,0.03); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08); }
+.app-kicker { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; opacity: 0.82; }
+.app-title { font-size: 28px; font-weight: 700; margin-top: 4px; }
+.app-subtitle { margin-top: 4px; opacity: 0.86; }
+.app-footer { font-size: 12px; opacity: 0.85; }
+.app-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(220px, 0.95fr); gap: 14px; align-items: start; }
+.panel, .side-card, .weather-card { border: 2px solid currentColor; background: rgba(255,255,255,0.025); padding: 12px; }
+.side-card { margin-bottom: 12px; }
+.metric-line { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; font-size: 13px; }
+.progress-shell { height: 16px; border: 2px solid currentColor; padding: 2px; margin: 10px 0 12px; }
+.progress-fill { height: 100%; background: currentColor; width: 0%; box-shadow: 0 0 18px currentColor; }
+.cluster-grid { display: grid; grid-template-columns: repeat(20, 1fr); gap: 4px; margin-top: 10px; }
+.cluster-cell { aspect-ratio: 1; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.08); }
+.cluster-cell.done { background: currentColor; box-shadow: 0 0 10px currentColor; }
+.cluster-cell.active { background: rgba(255,255,255,0.5); }
+.clock-digital { font-size: clamp(44px, 9vw, 84px); font-weight: 700; letter-spacing: 3px; line-height: 1; margin: 8px 0 12px; }
+.clock-date { font-size: 18px; opacity: 0.92; }
+.analog-clock { width: min(320px, 72vw); aspect-ratio: 1; border: 3px solid currentColor; border-radius: 50%; margin: 8px auto 4px; position: relative; box-shadow: inset 0 0 30px rgba(255,255,255,0.04); }
+.clock-mark { position: absolute; left: 50%; top: 8px; width: 2px; height: 16px; background: currentColor; transform-origin: 50% calc(160px - 8px); }
+.clock-hand { position: absolute; left: 50%; bottom: 50%; transform-origin: 50% 100%; border-radius: 999px; }
+.clock-hand.hour { width: 6px; height: 70px; background: currentColor; margin-left: -3px; }
+.clock-hand.minute { width: 4px; height: 98px; background: currentColor; margin-left: -2px; opacity: 0.92; }
+.clock-hand.second { width: 2px; height: 116px; background: currentColor; margin-left: -1px; opacity: 0.72; }
+.clock-center { position: absolute; left: 50%; top: 50%; width: 14px; height: 14px; margin-left: -7px; margin-top: -7px; border-radius: 50%; background: currentColor; }
+.weather-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.weather-card.active { background: rgba(255,255,255,0.1); box-shadow: 0 0 18px rgba(255,255,255,0.08); }
+.weather-card h4 { margin-bottom: 6px; font-size: 18px; }
+.weather-temp { font-size: 34px; font-weight: 700; margin: 8px 0; }
+.snake-shell { display: grid; gap: 12px; }
+.snake-board { display: grid; grid-template-columns: repeat(${SW}, 1fr); gap: 5px; padding: 14px; border: 2px solid currentColor; background: rgba(255,255,255,0.03); }
+.snake-cell { aspect-ratio: 1; border-radius: 8px; background: rgba(255,255,255,0.05); }
+.snake-cell.head { background: linear-gradient(135deg, currentColor, rgba(255,255,255,0.5)); box-shadow: 0 0 12px currentColor; }
+.snake-cell.body { background: rgba(255,255,255,0.4); }
+.snake-cell.food { background: radial-gradient(circle at 35% 35%, #fff6, #ff4d4d 55%, #891818 100%); border-radius: 12px; box-shadow: 0 0 12px rgba(255, 77, 77, 0.8); }
+.paint-shell, .paint-shell * { cursor: crosshair !important; }
+.paint-shell { display: grid; gap: 12px; }
+.paint-toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; border: 2px solid #ffffff; padding: 10px 12px; background: #000000; color: #ffffff; }
+.paint-toolbar button { border: 2px solid #ffffff; background: #000000; color: #ffffff; padding: 6px 12px; font: inherit; }
+.paint-toolbar button.active, .paint-toolbar button:hover { background: #ffffff; color: #000000; }
+.paint-canvas { display: grid; grid-template-columns: repeat(${PW}, 1fr); gap: 2px; border: 2px solid #ffffff; background: #000000; padding: 10px; user-select: none; }
+.paint-pixel { aspect-ratio: 1; border: 1px solid rgba(255,255,255,0.08); background: #000000; }
+.paint-pixel.filled { background: #ffffff; }
+.paint-meta { font-size: 12px; opacity: 0.84; }
+@media (max-width: 820px) { .app-grid { grid-template-columns: 1fr; } .snake-board { gap: 3px; padding: 10px; } }
+`;
+document.head.appendChild(uiEnhancementStyle);
+function setCursorProgram(enabled) { document.body.classList.toggle('cursor-app-active', !!enabled); }
+function setAppTheme(name) {
+  const theme = appThemes[name] || baseTheme;
+  applyTheme(theme.fg, theme.bg);
+  setCursorProgram(name === 'defrag');
+}
+function weatherIcon(condition) {
+  const text = condition.toLowerCase();
+  if(text.includes('cloud')) return 'CLOUD';
+  if(text.includes('humid')) return 'GLOW';
+  if(text.includes('rain')) return 'RAIN';
+  return 'SUN';
+}
+function tickWeather() {
+  weatherLocations.forEach((loc, idx) => {
+    const drift = idx % 2 === 0 ? 1 : -1;
+    loc.temp += Math.random() > 0.55 ? drift : 0;
+    loc.temp = Math.max(8, Math.min(35, loc.temp));
+    loc.wind = Math.max(4, Math.min(28, loc.wind + (Math.random() > 0.5 ? 1 : -1)));
+    loc.humidity = Math.max(30, Math.min(90, loc.humidity + (Math.random() > 0.5 ? 1 : -1)));
+  });
+}
+function ensureWeatherTicker() {
+  if(weatherHandle) clearInterval(weatherHandle);
+  weatherHandle = setInterval(() => {
+    tickWeather();
+    if(currentApp === 'weather') renderWeather();
+  }, 3500);
+}
+function renderClock() {
+  clearScreen();
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2, '0');
+  const m = String(now.getMinutes()).padStart(2, '0');
+  const s = String(now.getSeconds()).padStart(2, '0');
+  const root = document.createElement('div');
+  root.className = 'app-shell';
+  const header = document.createElement('div');
+  header.className = 'app-header';
+  header.innerHTML = '<div class="app-kicker">AT CLOCK</div><div class="app-title">Clock Console</div><div class="app-subtitle">Press Z to switch between digital and analog display modes.</div>';
+  root.appendChild(header);
+  const grid = document.createElement('div');
+  grid.className = 'app-grid';
+  const main = document.createElement('div');
+  main.className = 'panel';
+  if(clockMode === 'digital') {
+    main.innerHTML = '<div class="clock-digital">' + h + ':' + m + ':' + s + '</div><div class="clock-date">' + now.toDateString() + '</div>';
+  } else {
+    const hour = (now.getHours() % 12) * 30 + now.getMinutes() * 0.5;
+    const minute = now.getMinutes() * 6;
+    const second = now.getSeconds() * 6;
+    let marks = '';
+    for(let i = 0; i < 12; i++) marks += '<div class="clock-mark" style="transform: translateX(-50%) rotate(' + (i * 30) + 'deg);"></div>';
+    main.innerHTML = '<div class="analog-clock">' + marks + '<div class="clock-hand hour" style="transform: translateX(-50%) rotate(' + hour + 'deg);"></div><div class="clock-hand minute" style="transform: translateX(-50%) rotate(' + minute + 'deg);"></div><div class="clock-hand second" style="transform: translateX(-50%) rotate(' + second + 'deg);"></div><div class="clock-center"></div></div><div class="clock-date">' + now.toLocaleTimeString() + '  |  ' + now.toDateString() + '</div>';
+  }
+  grid.appendChild(main);
+  const side = document.createElement('div');
+  side.innerHTML = '<div class="side-card"><div class="app-kicker">Mode</div><div class="app-title" style="font-size:22px;margin-top:8px;">' + clockMode.toUpperCase() + '</div><div class="app-subtitle">Fast toggle lets the clock feel like a real utility instead of static art.</div></div><div class="side-card"><div class="app-kicker">Hotkeys</div><div class="metric-line"><span>Z</span><span>toggle display</span></div><div class="metric-line"><span>ESC</span><span>return</span></div></div>';
+  grid.appendChild(side);
+  root.appendChild(grid);
+  const footer = document.createElement('div');
+  footer.className = 'app-footer';
+  footer.textContent = '[Z] Toggle analog/digital   [ESC] Exit';
+  root.appendChild(footer);
+  screen.appendChild(root);
+}
+function openClock() {
+  state = 'APP';
+  renderClock();
+  clockHandle = setInterval(renderClock, 1000);
+}
+function startDefragRun() {
+  if(animHandle) clearInterval(animHandle);
+  defragPos = 0;
+  renderDefrag();
+  animHandle = setInterval(() => {
+    defragPos += defragMode === 'deep' ? 1 : 3;
+    if(defragPos > 100) defragPos = 100;
+    renderDefrag();
+    if(defragPos >= 100) stopAnim();
+  }, defragMode === 'deep' ? 140 : 95);
+}
+function renderDefrag() {
+  clearScreen();
+  const root = document.createElement('div');
+  root.className = 'app-shell';
+  const health = Math.max(78, 98 - Math.floor(defragPos / 4));
+  const fragments = defragMode === 'deep' ? Math.max(2, 42 - Math.floor(defragPos / 3)) : Math.max(5, 28 - Math.floor(defragPos / 4));
+  const header = document.createElement('div');
+  header.className = 'app-header';
+  header.innerHTML = '<div class="app-kicker">AT DEFRAG</div><div class="app-title">Drive Optimizer</div><div class="app-subtitle">' + (defragMode === 'deep' ? 'Deep Fragment mode checks every cluster and rebuilds damaged blocks.' : 'Quick mode restores scattered blocks and refreshes directory order.') + '</div>';
+  root.appendChild(header);
+  const grid = document.createElement('div');
+  grid.className = 'app-grid';
+  const main = document.createElement('div');
+  main.className = 'panel';
+  main.innerHTML = '<div class="metric-line"><span>Drive C:/ pass</span><span>' + defragPos + '%</span></div><div class="progress-shell"><div class="progress-fill" style="width:' + defragPos + '%;"></div></div><div class="metric-line"><span>Status</span><span>' + (defragPos >= 100 ? 'Complete' : defragMode === 'deep' ? 'Deep scan active' : 'Reordering clusters') + '</span></div>';
+  const gridView = document.createElement('div');
+  gridView.className = 'cluster-grid';
+  for(let i = 0; i < 120; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'cluster-cell';
+    if(i < Math.floor(120 * (defragPos / 100))) cell.classList.add('done');
+    else if(i < Math.floor(120 * (defragPos / 100)) + 6) cell.classList.add('active');
+    gridView.appendChild(cell);
+  }
+  main.appendChild(gridView);
+  const note = document.createElement('div');
+  note.className = 'app-subtitle';
+  note.style.marginTop = '10px';
+  note.textContent = defragPos >= 100 ? 'Cluster table rebuilt. Seek paths are now shorter and cleaner.' : 'Watch the live cluster map as the utility compacts fragmented blocks.';
+  main.appendChild(note);
+  grid.appendChild(main);
+  const side = document.createElement('div');
+  side.innerHTML = '<div class="side-card"><div class="app-kicker">Explain</div><div class="metric-line"><span>Mode</span><span>' + defragMode.toUpperCase() + '</span></div><div class="metric-line"><span>Loose fragments</span><span>' + fragments + '</span></div><div class="metric-line"><span>Drive health</span><span>' + health + '%</span></div></div><div class="side-card"><div class="app-kicker">Top Right Notes</div><div class="app-subtitle">Quick mode is lighter and faster. Deep mode verifies cluster chains, retries damaged spots, and takes longer on purpose.</div></div><div class="side-card"><div class="app-kicker">Controls</div><div class="metric-line"><span>D</span><span>toggle quick/deep</span></div><div class="metric-line"><span>R</span><span>restart pass</span></div><div class="metric-line"><span>ESC</span><span>return</span></div></div>';
+  grid.appendChild(side);
+  root.appendChild(grid);
+  const footer = document.createElement('div');
+  footer.className = 'app-footer';
+  footer.textContent = '[D] Toggle deep fragment   [R] Restart defrag   [ESC] Exit';
+  root.appendChild(footer);
+  screen.appendChild(root);
+}
+function openDefrag() {
+  state = 'APP';
+  startDefragRun();
+}
+function renderWeather() {
+  clearScreen();
+  const active = weatherLocations[weatherIndex];
+  const root = document.createElement('div');
+  root.className = 'app-shell';
+  const header = document.createElement('div');
+  header.className = 'app-header';
+  header.innerHTML = '<div class="app-kicker">AT WEATHER</div><div class="app-title">Tracked Locations</div><div class="app-subtitle">Switch cities with the arrow keys and press T to add or remove them from the tracking board.</div>';
+  root.appendChild(header);
+  const grid = document.createElement('div');
+  grid.className = 'app-grid';
+  const main = document.createElement('div');
+  main.className = 'panel';
+  main.innerHTML = '<div class="app-kicker">' + active.region + '</div><div class="app-title" style="font-size:30px;margin-top:6px;">' + active.city + '</div><div class="weather-temp">' + active.temp + 'C</div><div class="metric-line"><span>Condition</span><span>' + active.condition + '</span></div><div class="metric-line"><span>Humidity</span><span>' + active.humidity + '%</span></div><div class="metric-line"><span>Wind</span><span>' + active.wind + ' km/h</span></div><div class="metric-line"><span>Tracking</span><span>' + (active.tracked ? 'ON' : 'OFF') + '</span></div>';
+  grid.appendChild(main);
+  const side = document.createElement('div');
+  side.innerHTML = '<div class="side-card"><div class="app-kicker">Tracker</div><div class="metric-line"><span>Saved feeds</span><span>' + weatherLocations.filter(loc => loc.tracked).length + '</span></div><div class="metric-line"><span>Active icon</span><span>' + weatherIcon(active.condition) + '</span></div></div>';
+  grid.appendChild(side);
+  root.appendChild(grid);
+  const cards = document.createElement('div');
+  cards.className = 'weather-grid';
+  weatherLocations.forEach((loc, idx) => {
+    const card = document.createElement('div');
+    card.className = 'weather-card' + (idx === weatherIndex ? ' active' : '');
+    card.innerHTML = '<h4>' + loc.city + '</h4><div class="app-kicker">' + loc.region + '</div><div class="weather-temp">' + loc.temp + 'C</div><div class="metric-line"><span>' + loc.condition + '</span><span>' + (loc.tracked ? 'TRACK' : 'VIEW') + '</span></div>';
+    card.addEventListener('click', () => { weatherIndex = idx; renderWeather(); inputLayer.focus(); });
+    cards.appendChild(card);
+  });
+  root.appendChild(cards);
+  const footer = document.createElement('div');
+  footer.className = 'app-footer';
+  footer.textContent = '[LEFT/RIGHT] Change location   [T] Track or untrack   [ESC] Exit';
+  root.appendChild(footer);
+  screen.appendChild(root);
+}
+function openWeather() {
+  state = 'APP';
+  ensureWeatherTicker();
+  renderWeather();
+}
+function renderSnake() {
+  clearScreen();
+  const root = document.createElement('div');
+  root.className = 'snake-shell';
+  const header = document.createElement('div');
+  header.className = 'app-header';
+  header.innerHTML = '<div class="app-kicker">AT SNAKE</div><div class="app-title">Soft Grid Snake</div><div class="app-subtitle">Rounded cells and a clearer apple shape make the board feel more intentional.</div>';
+  root.appendChild(header);
+  const meta = document.createElement('div');
+  meta.className = 'panel';
+  meta.innerHTML = '<div class="metric-line"><span>Score</span><span>' + snakeScore + '</span></div><div class="metric-line"><span>Status</span><span>' + (snakeDead ? 'Game over - press R' : 'Running') + '</span></div>';
+  root.appendChild(meta);
+  const board = document.createElement('div');
+  board.className = 'snake-board';
+  for(let y = 0; y < SH; y++) {
+    for(let x = 0; x < SW; x++) {
+      const cell = document.createElement('div');
+      cell.className = 'snake-cell';
+      if(snakeBody[0].x === x && snakeBody[0].y === y) cell.classList.add('head');
+      else if(snakeBody.some((s, i) => i > 0 && s.x === x && s.y === y)) cell.classList.add('body');
+      else if(snakeFood.x === x && snakeFood.y === y) cell.classList.add('food');
+      board.appendChild(cell);
+    }
+  }
+  root.appendChild(board);
+  const footer = document.createElement('div');
+  footer.className = 'app-footer';
+  footer.textContent = '[ARROW KEYS] Move   [R] Restart   [ESC] Exit';
+  root.appendChild(footer);
+  screen.appendChild(root);
+}
+function paintDrawAt(x, y, mode) { paintGrid[y][x] = mode === 'erase' ? ' ' : '#'; }
+function renderPaint() {
+  clearScreen();
+  const root = document.createElement('div');
+  root.className = 'paint-shell';
+  const header = document.createElement('div');
+  header.className = 'app-header';
+  header.innerHTML = '<div class="app-kicker">AT PAINT</div><div class="app-title">Mouse Paint</div><div class="app-subtitle">Black and white only. Left click draws, right click erases, drag to sketch.</div>';
+  root.appendChild(header);
+  const toolbar = document.createElement('div');
+  toolbar.className = 'paint-toolbar';
+  toolbar.innerHTML = '<button data-mode="draw" class="' + (paintMode === 'draw' ? 'active' : '') + '">Ink</button><button data-mode="erase" class="' + (paintMode === 'erase' ? 'active' : '') + '">Erase</button><button data-action="clear">Clear</button><span class="paint-meta">Mouse only: click, drag, and right-click to remove marks.</span>';
+  toolbar.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const mode = btn.getAttribute('data-mode');
+      const action = btn.getAttribute('data-action');
+      if(mode) paintMode = mode;
+      if(action === 'clear') for(let y = 0; y < PH; y++) for(let x = 0; x < PW; x++) paintGrid[y][x] = ' ';
+      renderPaint();
+      inputLayer.focus();
+    });
+  });
+  root.appendChild(toolbar);
+  const canvas = document.createElement('div');
+  canvas.className = 'paint-canvas';
+  canvas.addEventListener('contextmenu', ev => ev.preventDefault());
+  canvas.addEventListener('mousedown', ev => {
+    const pixel = ev.target.closest('.paint-pixel');
+    if(!pixel) return;
+    paintMouseDown = true;
+    const mode = ev.button === 2 ? 'erase' : paintMode;
+    paintDrawAt(Number(pixel.dataset.x), Number(pixel.dataset.y), mode);
+    renderPaint();
+    inputLayer.focus();
+  });
+  canvas.addEventListener('mouseover', ev => {
+    if(!paintMouseDown) return;
+    const pixel = ev.target.closest('.paint-pixel');
+    if(!pixel) return;
+    paintDrawAt(Number(pixel.dataset.x), Number(pixel.dataset.y), paintMode);
+    pixel.classList.toggle('filled', paintGrid[Number(pixel.dataset.y)][Number(pixel.dataset.x)] !== ' ');
+  });
+  for(let y = 0; y < PH; y++) {
+    for(let x = 0; x < PW; x++) {
+      const pixel = document.createElement('div');
+      pixel.className = 'paint-pixel' + (paintGrid[y][x] !== ' ' ? ' filled' : '');
+      pixel.dataset.x = String(x);
+      pixel.dataset.y = String(y);
+      canvas.appendChild(pixel);
+    }
+  }
+  root.appendChild(canvas);
+  const footer = document.createElement('div');
+  footer.className = 'app-footer';
+  footer.textContent = '[MOUSE] Draw   [RIGHT CLICK] Erase   [ESC] Exit';
+  root.appendChild(footer);
+  screen.appendChild(root);
+}
+function openPaint() {
+  state = 'APP';
+  if(paintGrid.length === 0) {
+    for(let y = 0; y < PH; y++) {
+      paintGrid[y] = [];
+      for(let x = 0; x < PW; x++) paintGrid[y][x] = ' ';
+    }
+  }
+  renderPaint();
+}
+const monoGlyphs = { Notepad:'NP', Files:'FM', Clock:'CL', Weather:'WX', Calendar:'CA', Mail:'ML', Calc:'CX', Snake:'SN', Paint:'PT', Music:'MU', Sysstat:'SS', Defrag:'DF', Diskchk:'DC', Backup:'BK', Hardware:'HW', Netmap:'NM', Tasks:'TK', Crypt:'CR', Passwd:'PW', Ping:'PG' };
+guiApps.forEach(app => { app.glyph = monoGlyphs[app.name] || app.name.slice(0, 2).toUpperCase(); });
+const originalShowPrompt = showPrompt;
+showPrompt = function() {
+  applyTheme(baseTheme.fg, baseTheme.bg);
+  setCursorProgram(false);
+  originalShowPrompt();
+};
+const originalStopAnim = stopAnim;
+stopAnim = function() {
+  originalStopAnim();
+  if(weatherHandle) {
+    clearInterval(weatherHandle);
+    weatherHandle = null;
+  }
+  paintMouseDown = false;
+};
+const originalLaunchApp = launchApp;
+launchApp = function(name) {
+  setAppTheme(name);
+  originalLaunchApp(name);
+};
+const originalOpenGui = openGui;
+openGui = function() {
+  applyTheme(baseTheme.fg, baseTheme.bg);
+  setCursorProgram(false);
+  originalOpenGui();
+};
+const originalCloseGui = closeGui;
+closeGui = function() {
+  originalCloseGui();
+  applyTheme(baseTheme.fg, baseTheme.bg);
+  setCursorProgram(false);
+};
+const originalReturnToGui = returnToGui;
+returnToGui = function() {
+  originalReturnToGui();
+  applyTheme(baseTheme.fg, baseTheme.bg);
+  setCursorProgram(false);
+};
+const legacyHandleAppKey = handleAppKey;
+handleAppKey = function(e) {
+  const key = e.key;
+  if(currentApp === 'clock' && key.toLowerCase() === 'z') {
+    clockMode = clockMode === 'digital' ? 'analog' : 'digital';
+    renderClock();
+    return;
+  }
+  if(currentApp === 'defrag') {
+    if(key.toLowerCase() === 'd') { defragMode = defragMode === 'quick' ? 'deep' : 'quick'; startDefragRun(); return; }
+    if(key.toLowerCase() === 'r') { startDefragRun(); return; }
+  }
+  if(currentApp === 'weather') {
+    if(key === 'ArrowLeft') { weatherIndex = (weatherIndex - 1 + weatherLocations.length) % weatherLocations.length; renderWeather(); return; }
+    if(key === 'ArrowRight') { weatherIndex = (weatherIndex + 1) % weatherLocations.length; renderWeather(); return; }
+    if(key.toLowerCase() === 't') { weatherLocations[weatherIndex].tracked = !weatherLocations[weatherIndex].tracked; renderWeather(); return; }
+  }
+  if(currentApp === 'paint') {
+    e.preventDefault();
+    return;
+  }
+  legacyHandleAppKey(e);
+};
+document.addEventListener('mouseup', () => { paintMouseDown = false; });
+Object.assign(appThemes, {
+  notepad:{ fg:'#ffb86c', bg:'#1b1208' },
+  flmgr:{ fg:'#66d9ef', bg:'#08171c' },
+  netmap:{ fg:'#8be9fd', bg:'#08131a' },
+  sysstat:{ fg:'#50fa7b', bg:'#09140d' },
+  calc:{ fg:'#ff79c6', bg:'#190917' },
+  calendar:{ fg:'#f1fa8c', bg:'#1a1809' },
+  mail:{ fg:'#bd93f9', bg:'#120c1e' },
+  diskchk:{ fg:'#ff5555', bg:'#1b0909' },
+  crypt:{ fg:'#caa6ff', bg:'#110b17' },
+  backup:{ fg:'#5af2c8', bg:'#071714' },
+  hardware:{ fg:'#8ab4ff', bg:'#0a1020' },
+  tasks:{ fg:'#ffd166', bg:'#1b1406' },
+  ping:{ fg:'#7df9ff', bg:'#071519' },
+  music:{ fg:'#ff9f9f', bg:'#1b0c12' },
+  passwd:{ fg:'#f7a8ff', bg:'#16081a' }
+});
+const guiInvertStyle = document.createElement('style');
+guiInvertStyle.textContent = `
+#gui-launcher { background:#000000 !important; color:#ffffff !important; }
+#gui-titlebar { background:#000000 !important; color:#ffffff !important; border:2px solid #ffffff !important; border-bottom:none !important; }
+#gui-titlebar-close { background:#000000 !important; color:#ffffff !important; border:2px solid #ffffff !important; }
+#gui-titlebar-close:hover { background:#ffffff !important; color:#000000 !important; }
+#gui-body, #gui-statusbar { background:#000000 !important; color:#ffffff !important; border-color:#ffffff !important; }
+.gui-icon-glyph { background:#000000 !important; color:#ffffff !important; border-color:#ffffff !important; }
+.gui-label { color:#ffffff !important; }
+.gui-icon:hover { background:#1c1c1c !important; border:2px solid #ffffff !important; }
+.gui-icon:hover .gui-label { color:#ffffff !important; }
+`;
+document.head.appendChild(guiInvertStyle);
+let calcMemory = '';
+let backupVerifyMode = false;
+let hardwarePage = 0;
+let netmapState = { latency:12, dns:'8.8.8.8 / 8.8.4.4', status:'CONNECTED' };
+let sysstatState = null;
+function randomBar(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function makeMetricPanel(title, subtitle, rows, footer) {
+  clearScreen();
+  const root = document.createElement('div');
+  root.className = 'app-shell';
+  const header = document.createElement('div');
+  header.className = 'app-header';
+  header.innerHTML = '<div class="app-kicker">' + title + '</div><div class="app-title">' + subtitle + '</div>';
+  root.appendChild(header);
+  const panel = document.createElement('div');
+  panel.className = 'panel';
+  rows.forEach(row => {
+    const line = document.createElement('div');
+    line.className = 'metric-line';
+    line.innerHTML = '<span>' + row[0] + '</span><span>' + row[1] + '</span>';
+    panel.appendChild(line);
+  });
+  root.appendChild(panel);
+  const foot = document.createElement('div');
+  foot.className = 'app-footer';
+  foot.textContent = footer;
+  root.appendChild(foot);
+  screen.appendChild(root);
+}
+function openNetmap() {
+  state = 'APP';
+  netmapState = {
+    latency: randomBar(6, 28),
+    dns: Math.random() > 0.5 ? '8.8.8.8 / 8.8.4.4' : '1.1.1.1 / 1.0.0.1',
+    status: Math.random() > 0.15 ? 'CONNECTED' : 'ROUTING'
+  };
+  const rows = [
+    ['Router', '192.168.0.1'],
+    ['ATDOS Host', '192.168.0.20'],
+    ['Peer Nodes', 'PC-01 / PC-02 / PRN-1'],
+    ['Gateway', '192.168.0.1'],
+    ['DNS', netmapState.dns],
+    ['Latency', netmapState.latency + 'ms'],
+    ['Status', netmapState.status]
+  ];
+  makeMetricPanel('AT NETMAP', 'Live Network Map', rows, '[R] Refresh map   [ESC] Exit');
+}
+function snapshotSysstat() {
+  sysstatState = {
+    cpu: randomBar(14, 52),
+    ram: randomBar(32, 71),
+    drive: randomBar(24, 39),
+    temp: randomBar(35, 44),
+    uptime: '00:' + String(randomBar(4, 18)).padStart(2,'0') + ':' + String(randomBar(10,59)).padStart(2,'0'),
+    proc: randomBar(7, 12)
+  };
+}
+function openSysstat() {
+  state = 'APP';
+  snapshotSysstat();
+  const rows = [
+    ['CPU Usage', sysstatState.cpu + '%'],
+    ['RAM Usage', sysstatState.ram + '%'],
+    ['Drive C:', sysstatState.drive + '%'],
+    ['CPU Temp', sysstatState.temp + 'C'],
+    ['Uptime', sysstatState.uptime],
+    ['Processes', String(sysstatState.proc)],
+    ['Kernel', 'KERNAL.SYS v1.0'],
+    ['BIOS', 'AT-BIOS 1987']
+  ];
+  makeMetricPanel('AT SYSSTAT', 'Live System Snapshot', rows, '[R] Refresh stats   [ESC] Exit');
+}
+function openCalc() {
+  state = 'APP';
+  calcExpr = '';
+  calcResult = '';
+  renderCalc();
+}
+function renderCalc() {
+  clearScreen();
+  const root = document.createElement('div');
+  root.className = 'app-shell';
+  const header = document.createElement('div');
+  header.className = 'app-header';
+  header.innerHTML = '<div class="app-kicker">AT CALC</div><div class="app-title">Signal Calculator</div><div class="app-subtitle">Type an expression. Store the result with M, paste memory with P, clear with X.</div>';
+  root.appendChild(header);
+  const panel = document.createElement('div');
+  panel.className = 'panel';
+  const expr = document.createElement('div');
+  expr.className = 'metric-line';
+  expr.innerHTML = '<span>Expression</span><span>' + (calcExpr || '...') + '</span>';
+  const result = document.createElement('div');
+  result.className = 'metric-line';
+  result.innerHTML = '<span>Result</span><span>' + (calcResult || '...') + '</span>';
+  const memory = document.createElement('div');
+  memory.className = 'metric-line';
+  memory.innerHTML = '<span>Memory</span><span>' + (calcMemory || 'empty') + '</span>';
+  panel.appendChild(expr);
+  panel.appendChild(result);
+  panel.appendChild(memory);
+  root.appendChild(panel);
+  const footer = document.createElement('div');
+  footer.className = 'app-footer';
+  footer.textContent = '[ENTER] Evaluate   [M] Save result   [P] Paste memory   [X] Clear   [ESC] Exit';
+  root.appendChild(footer);
+  screen.appendChild(root);
+}
+function openBackup() {
+  state = 'APP';
+  backupPos = 0;
+  renderBackup();
+  animHandle = setInterval(() => {
+    backupPos += backupVerifyMode ? 2 : 4;
+    if(backupPos > 100) backupPos = 100;
+    renderBackup();
+    if(backupPos >= 100) stopAnim();
+  }, backupVerifyMode ? 170 : 120);
+}
+function renderBackup() {
+  const fileIdx = Math.min(Math.floor((backupPos / 100) * backupFiles.length), backupFiles.length - 1);
+  const rows = [
+    ['Source', 'C:/'],
+    ['Destination', 'A:/'],
+    ['Mode', backupVerifyMode ? 'VERIFY + COPY' : 'FAST COPY'],
+    ['Progress', backupPos + '%'],
+    ['Current File', backupFiles[fileIdx]],
+    ['Status', backupPos >= 100 ? 'ARCHIVE READY' : 'WRITING SECTORS']
+  ];
+  makeMetricPanel('AT BACKUP', 'Backup Station', rows, '[V] Toggle verify   [R] Restart backup   [ESC] Exit');
+}
+function openHardware() {
+  state = 'APP';
+  const pages = [
+    [
+      ['Processor', 'AT-286 @ 8 MHz'],
+      ['Memory', '640 KB DRAM'],
+      ['Storage', '512 MB HDD / 1.44 MB Floppy'],
+      ['Display', 'AT Graphics Array'],
+      ['Keyboard', 'AT 84-Key']
+    ],
+    [
+      ['COM1', 'Mouse Bus Ready'],
+      ['LPT1', 'Printer Idle'],
+      ['Speaker', 'Monotone Active'],
+      ['RTC', 'Battery Stable'],
+      ['Expansion', '2 ISA Slots Open']
+    ]
+  ];
+  const subtitles = ['Hardware Overview', 'Ports and Attached Devices'];
+  makeMetricPanel('AT HARDWARE', subtitles[hardwarePage], pages[hardwarePage], '[T] Toggle page   [ESC] Exit');
+}
+function openTasks() {
+  state = 'APP';
+  taskMode = 'list';
+  taskInput = '';
+  renderTasks();
+}
+function renderTasks() {
+  clearScreen();
+  const root = document.createElement('div');
+  root.className = 'app-shell';
+  const header = document.createElement('div');
+  header.className = 'app-header';
+  header.innerHTML = '<div class="app-kicker">AT TASKS</div><div class="app-title">Task Board</div><div class="app-subtitle">Track work, mark it done, and keep the list alive between launches.</div>';
+  root.appendChild(header);
+  const panel = document.createElement('div');
+  panel.className = 'panel';
+  if(tasks.length === 0) {
+    panel.innerHTML = '<div class="metric-line"><span>No tasks saved</span><span>Press A</span></div>';
+  } else {
+    tasks.forEach((t, i) => {
+      const row = document.createElement('div');
+      row.className = 'metric-line';
+      row.innerHTML = '<span>' + (i + 1) + '. ' + t.text + '</span><span>' + (t.done ? 'DONE' : 'OPEN') + '</span>';
+      panel.appendChild(row);
+    });
+  }
+  if(taskMode === 'add') {
+    const addRow = document.createElement('div');
+    addRow.className = 'metric-line';
+    addRow.innerHTML = '<span>New Task</span><span>' + (taskInput || '...') + '</span>';
+    panel.appendChild(addRow);
+  }
+  root.appendChild(panel);
+  const footer = document.createElement('div');
+  footer.className = 'app-footer';
+  footer.textContent = taskMode === 'add' ? '[ENTER] Save   [BACKSPACE] Delete   [ESC] Cancel' : '[A] Add task   [1-9] Toggle done   [ESC] Exit';
+  root.appendChild(footer);
+  screen.appendChild(root);
+}
+function openSnake() {
+  state = 'APP';
+  snakeBody  = [{x:5,y:7},{x:4,y:7},{x:3,y:7}];
+  snakeDir   = {x:1,y:0};
+  snakeScore = 0;
+  snakeDead  = false;
+  placeSnakeFood();
+  renderSnake();
+  snakeHandle = setInterval(() => {
+    if(snakeDead) return;
+    const head = {x: snakeBody[0].x + snakeDir.x, y: snakeBody[0].y + snakeDir.y};
+    const willEat = head.x === snakeFood.x && head.y === snakeFood.y;
+    const collisionBody = willEat ? snakeBody : snakeBody.slice(0, -1);
+    if(head.x < 0 || head.x >= SW || head.y < 0 || head.y >= SH || collisionBody.some(s => s.x === head.x && s.y === head.y)) {
+      snakeDead = true;
+      renderSnake();
+      return;
+    }
+    snakeBody.unshift(head);
+    if(willEat) {
+      snakeScore += 10;
+      placeSnakeFood();
+    } else {
+      snakeBody.pop();
+    }
+    renderSnake();
+  }, 180);
+}
+const finalHandleAppKey = handleAppKey;
+handleAppKey = function(e) {
+  const key = e.key;
+  if(currentApp === 'netmap' && key.toLowerCase() === 'r') { openNetmap(); return; }
+  if(currentApp === 'sysstat' && key.toLowerCase() === 'r') { openSysstat(); return; }
+  if(currentApp === 'calc') {
+    if(key.toLowerCase() === 'm' && calcResult) { calcMemory = calcResult; renderCalc(); return; }
+    if(key.toLowerCase() === 'p' && calcMemory) { calcExpr += calcMemory; renderCalc(); return; }
+    if(key.toLowerCase() === 'x') { calcExpr = ''; calcResult = ''; renderCalc(); return; }
+  }
+  if(currentApp === 'backup') {
+    if(key.toLowerCase() === 'v') { backupVerifyMode = !backupVerifyMode; openBackup(); return; }
+    if(key.toLowerCase() === 'r') { openBackup(); return; }
+  }
+  if(currentApp === 'hardware' && key.toLowerCase() === 't') { hardwarePage = (hardwarePage + 1) % 2; openHardware(); return; }
+  finalHandleAppKey(e);
+};
+applyTheme('#ffffff','#000000');
+boot();
+</script>
+</body>
+</html>
