@@ -330,9 +330,8 @@
         <div class="menu-item" data-action="credits">Credits</div>
     </div>
     <div class="notification-box">
-        <div class="notification-title">The release of AT Aurora</div>
-        <div class="notification-body">AT Aurora is out - a more atmospheric AT Box build with a darker blue presentation, stronger glow work, and a more polished visual identity.
-Experience a glossy boot flow, updated OS build selection, and a futuristic desktop style that pushes AT Box further into its own look.</div>
+        <div class="notification-title">???</div>
+        <div class="notification-body">I don't know, you check it yourself</div>
     </div>
 </div>
 
@@ -362,11 +361,15 @@ Experience a glossy boot flow, updated OS build selection, and a futuristic desk
 
 ATBOX (VISTA) 1.13.2
 ATBOX (FOX) 1.0
-ATBOX (AURORA) 1.0</div>
+ATBOX (AURORA) 1.0
+
+LONG LOST (???)</div>
         <div class="menu-container" style="margin-top: 15px;" id="confirmMenu">
             <div class="menu-item" data-action="vista">AT Box (Codename Vista)</div>
             <div class="menu-item" data-action="fox">AT Box (Codename Fox)</div>
             <div class="menu-item" data-action="aurora">ATBox (Codename Aurora)</div>
+            <div class="menu-title" style="margin-top: 18px; margin-bottom: 2px;">Long Lost</div>
+            <div class="menu-item" data-action="lost">???</div>
         </div>
         <div class="back-button" onclick="fadeToBlackThen(() => initPhase5(), 500)">Back</div>
     </div>
@@ -616,6 +619,8 @@ ATBOX (AURORA) 1.0</div>
             launchOperatingSystem('atfox.html');
         } else if (action === 'aurora') {
             launchOperatingSystem('aurora.html');
+        } else if (action === 'lost') {
+            launchOperatingSystem('ATDOS.html');
         }
     }
 
