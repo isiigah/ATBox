@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AT Macintosh Remake WebOS</title>
+    <style>
+        /* 1990 Macintosh Pattern Styles */
+        :root {
+            --bg-pattern: radial-gradient(#666 25%, transparent 25%), radial-gradient(#666 25%, transparent 25%);
+            --bg-size: 4px 4px;
+            --bg-position: 0 0, 2px 2px;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            font-family: "Geneva", "Chicago", "Courier New", monospace;
+            font-size: 11px; font-weight: bold;
+            background-color: #999;
+            background-image: var(--bg-pattern);
+            background-size: var(--bg-size);
+            background-position: var(--bg-position);
+            overflow: hidden; color: #000;
+        }
+
+        /* --- ADVANCED TEXT BOOT SEQUENCE --- */
+        #boot-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #fff; z-index: 999999;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+        }
+
+        #boot-mac-box {
+            border: 4px solid #000; padding: 12px 18px; font-size: 24px;
+            background: #fff; font-family: monospace; margin-bottom: 25px;
+            box-shadow: 4px 4px 0 #000; text-align: center; line-height: 1;
+        }
+
+        #boot-log {
+            width: 320px; height: 110px; border: 1px dashed #000;
+            background: #fff; font-family: "Courier New", monospace;
+            font-size: 11px; padding: 8px; overflow: hidden;
+            white-space: pre-line; line-height: 1.4;
+        }
+
+        /* --- INTERFACE MANAGEMENT SYSTEM --- */
+        #menu-bar {
+            background-color: #fff; border-bottom: 2px solid #000;
+            height: 24px; display: flex; align-items: center; padding: 0 10px;
+            position: absolute; top: 0; left: 0; width: 100%; z-index: 9999;
+        }
+
+        .menu-item { position: relative; padding: 2px 10px; cursor: pointer; }
+        .menu-item:hover, .menu-item.active { background-color: #000; color: #fff; }
+        
+        .dropdown {
+            display: none; position: absolute; top: 22px; left: 0;
+            background-color: #fff; border: 2px solid #000;
+            box-shadow: 3px 3px 0px #000; min-width: 200px; max-height: 400px; overflow-y: auto; z-index: 10000;
+        }
+        .menu-item.active .dropdown { display: block; }
+        
+        .dropdown-item { padding: 5px 12px; color: #000; background: #fff; }
+        .dropdown-item:hover { background-color: #000; color: #fff; }
+
+        #desktop {
+            position: absolute; top: 24px; left: 0; right: 0; bottom: 0;
+            padding: 20px; display: flex; flex-direction: column;
+            flex-wrap: wrap; gap: 12px; align-content: flex-start;
+        }
+
+        .desk-icon { width: 85px; text-align: center; cursor: pointer; margin-bottom: 4px; }
+        .desk-icon .icon-box {
+            width: 40px; height: 40px; border: 2px solid #000; background-color: #fff;
+            margin: 0 auto 4px auto; display: flex; align-items: center; justify-content: center;
+            font-size: 20px; box-shadow: 2px 2px 0 #000;
+        }
+        .desk-icon:active .icon-box { background-color: #000; color: #fff; }
+        .desk-icon .icon-label { background-color: #fff; border: 1px solid #000; padding: 1px 4px; font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+
+        /* --- WINDOW ARCHITECTURE --- */
+        .window {
+            position: absolute; background-color: #fff; border: 2px solid #000;
+            box-shadow: 4px 4px 0px #000; display: flex; flex-direction: column;
+            min-width: 240px; min-height: 150px;
+        }
+
+        .title-bar {
+            background: repeating-linear-gradient(0deg, #000, #000 1px, #fff 1px, #fff 3px);
+            border-bottom: 2px solid #000; height: 22px;
+            display: flex; align-items: center; justify-content: space-between; padding: 0 6px; cursor: move;
+        }
+
+        .title-text { background-color: #fff; padding: 0 8px; color: #000; font-size: 11px; }
+        .close-box { width: 12px; height: 12px; border: 1px solid #000; background-color: #fff; cursor: pointer; }
+        .close-box:active { background-color: #000; }
+        .window-content { padding: 10px; flex: 1; overflow: auto; background-color: #fff; }
+
+        .mac-btn {
+            background: #fff; border: 1px solid #000; padding: 4px 8px;
+            cursor: pointer; display: inline-block; box-shadow: 1px 1px 0 #000;
+            font-weight: bold; font-family: inherit; font-size: 10px; margin: 2px;
+        }
+        .mac-btn:active { background: #000; color: #fff; }
+
+        /* --- APP CONTENT SPECS --- */
+        .launchpad-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; text-align: center; }
+        .launch-item { border: 1px solid #000; padding: 6px 2px; background: #fff; cursor: pointer; box-shadow: 2px 2px 0 #000; font-size: 10px; }
+        .launch-item:active { background: #000; color: #fff; }
+        .launch-icon { font-size: 18px; margin-bottom: 2px; }
+
+        .term-box { background: #fff; border: 1px solid #000; height: 120px; font-family: monospace; overflow-y: auto; padding: 4px; }
+        .term-out { white-space: pre-wrap; font-size: 11px; }
+        .term-row { display: flex; align-items: center; margin-top: 4px; }
+        .term-input { flex: 1; border: none; outline: none; font-family: monospace; font-size: 11px; font-weight: bold; }
+
+        .file-row { display: flex; align-items: center; padding: 5px; border-bottom: 1px dashed #000; cursor: pointer; }
+        .file-row:hover { background-color: #000; color: #fff; }
+        textarea.mac-editor { width: 100%; height: 110px; border: 1px solid #000; resize: none; font-family: monospace; outline: none; padding: 4px; }
+        
+        /* Fixed MacPaint Canvas styles */
+        .paint-canvas { border: 1px solid #000; background: #fff; cursor: crosshair; display: block; touch-action: none; }
+        
+        .calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+        .calc-screen { border: 2px solid #000; text-align: right; padding: 4px; font-family: monospace; font-size: 13px; margin-bottom: 6px; }
+        
+        .game-canvas { border: 2px solid #000; background: #fff; display: block; margin: 0 auto; }
+        .bar-container { border: 1px solid #000; background: #fff; height: 14px; margin: 6px 0; position: relative; }
+        .bar-fill { background: #000; height: 100%; width: 0%; transition: width 0.3s; }
+
+        /* Memory game layout */
+        .memory-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; width: 160px; margin: 0 auto; }
+        .memory-card { width: 36px; height: 36px; border: 1px solid #000; display: flex; align-items: center; justify-content: center; background: #fff; cursor: pointer; font-size: 16px; }
+        .memory-card.flipped { background: #eee; }
+
+        /* Todo checklist styles */
+        .todo-item { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+    </style>
+</head>
+<body>
+
+<div id="boot-screen">
+    <div id="boot-mac-box">
+      <div>..  ..</div>
+      <div>  ||  </div>
+      <div>\____/</div>
+      <div style="font-size:10px; margin-top:5px;">SYSTEM 5.0</div>
+    </div>
+    <div id="boot-log"></div>
+</div>
+
+<div id="menu-bar">
+    <div class="menu-item" onclick="toggleMenu(event, 'sysMenu')">[System]
+        <div id="sysMenu" class="dropdown">
+            <div class="dropdown-item" onclick="openWindow('aboutWin')">About System Architecture...</div>
+        </div>
+    </div>
+    <div class="menu-item" onclick="toggleMenu(event, 'appsMenu')">Applications
+        <div id="appsMenu" class="dropdown">
+            <div class="dropdown-item" onclick="openWindow('launchpadWin')">🚀 Launchpad Center</div>
+            <div class="dropdown-item" onclick="openWindow('breakoutWin')">🧱 Breakout Arcade</div>
+            <div class="dropdown-item" onclick="openWindow('calcWin')">⚃ Calculator</div>
+            <div class="dropdown-item" onclick="openWindow('colorWin')">🎨 Color Picker</div>
+            <div class="dropdown-item" onclick="openWindow('termWin')">🐚 Command Terminal</div>
+            <div class="dropdown-item" onclick="openWindow('settingsWin')">🎛 Control Panel</div>
+            <div class="dropdown-item" onclick="openWindow('defragWin')">⚙ Disk Defragmenter</div>
+            <div class="dropdown-item" onclick="openWindow('driverWin')">🔌 DriverCheck+</div>
+            <div class="dropdown-item" onclick="openWindow('filesWin')">📁 File Manager</div>
+            <div class="dropdown-item" onclick="openWindow('floppyWin')">💾 Floppy Disk Utility</div>
+            <div class="dropdown-item" onclick="openWindow('fortuneWin')">⭐ Fortune Cookie</div>
+            <div class="dropdown-item" onclick="openWindow('paintWin')">🖌 MacPaint Pro</div>
+            <div class="dropdown-item" onclick="openWindow('snakeWin')">🐍 MacSnake Arcade</div>
+            <div class="dropdown-item" onclick="openWindow('memoryWin')">🧠 Memory Match</div>
+            <div class="dropdown-item" onclick="openWindow('raceWin')">🏎 MicroRacer Arena</div>
+            <div class="dropdown-item" onclick="openWindow('noteWin')">✍ Notepad Pro</div>
+            <div class="dropdown-item" onclick="openWindow('resourceWin')">📊 Resource Monitor</div>
+            <div class="dropdown-item" onclick="openWindow('stopwatchWin')">⏳ Stop Watch</div>
+            <div class="dropdown-item" onclick="openWindow('logWin')">📜 System Log Viewer</div>
+            <div class="dropdown-item" onclick="openWindow('thermalWin')">🌡 Thermal Monitor</div>
+            <div class="dropdown-item" onclick="openWindow('todoWin')">📝 Todo Manager</div>
+            <div class="dropdown-item" onclick="openWindow('trashWin')">🗑 Trash Can Utility</div>
+        </div>
+    </div>
+    <div class="menu-item" id="menu-clock" style="margin-left: auto; cursor: default;">00:00:00</div>
+</div>
+
+<div id="desktop">
+    <div class="desk-icon" onclick="openWindow('launchpadWin')"><div class="icon-box">🚀</div><div class="icon-label">Launchpad</div></div>
+    <div class="desk-icon" onclick="openWindow('filesWin')"><div class="icon-box">📁</div><div class="icon-label">Hard Disk</div></div>
+    <div class="desk-icon" onclick="openWindow('termWin')"><div class="icon-box">🐚</div><div class="icon-label">Terminal</div></div>
+    <div class="desk-icon" onclick="openWindow('paintWin')"><div class="icon-box">🖌</div><div class="icon-label">MacPaint</div></div>
+    <div class="desk-icon" onclick="openWindow('calcWin')"><div class="icon-box">⚃</div><div class="icon-label">Calc</div></div>
+    <div class="desk-icon" onclick="openWindow('breakoutWin')"><div class="icon-box">🧱</div><div class="icon-label">Breakout</div></div>
+    <div class="desk-icon" onclick="openWindow('trashWin')"><div class="icon-box">🗑</div><div class="icon-label">Trash Can</div></div>
+</div>
+
+<div id="launchpadWin" class="window" style="width: 460px; height: 380px; top: 40px; left: 110px; display: none;">
+    <div class="title-bar"><div class="close-box" onclick="closeWindow('launchpadWin')"></div><div class="title-text">Launchpad Engine Pro</div><div></div></div>
+    <div class="window-content">
+        <div class="launchpad-grid">
+            <div class="launch-item" onclick="openWindow('aboutWin')"><div class="launch-icon">ℹ</div><div>About OS</div></div>
+            <div class="launch-item" onclick="openWindow('filesWin')"><div class="launch-icon">📁</div><div>File Mgr</div></div>
+            <div class="launch-item" onclick="openWindow('termWin')"><div class="launch-icon">🐚</div><div>Terminal</div></div>
+            <div class="launch-item" onclick="openWindow('calcWin')"><div class="launch-icon">⚃</div><div>Calculator</div></div>
+            <div class="launch-item" onclick="openWindow('noteWin')"><div class="launch-icon">✍</div><div>Notepad</div></div>
+            <div class="launch-item" onclick="openWindow('paintWin')"><div class="launch-icon">🖌</div><div>MacPaint</div></div>
+            <div class="launch-item" onclick="openWindow('thermalWin')"><div class="launch-icon">🌡</div><div>Thermals</div></div>
+            <div class="launch-item" onclick="openWindow('snakeWin')"><div class="launch-icon">🐍</div><div>MacSnake</div></div>
+            <div class="launch-item" onclick="openWindow('raceWin')"><div class="launch-icon">🏎</div><div>MicroRacer</div></div>
+            <div class="launch-item" onclick="openWindow('defragWin')"><div class="launch-icon">⚙</div><div>Defrag</div></div>
+            <div class="launch-item" onclick="openWindow('settingsWin')"><div class="launch-icon">🎛</div><div>Ctrl Panel</div></div>
+            <div class="launch-item" onclick="openWindow('driverWin')"><div class="launch-icon">🔌</div><div>Drivers</div></div>
+            <div class="launch-item" onclick="openWindow('floppyWin')"><div class="launch-icon">💾</div><div>Floppy Dsk</div></div>
+            <div class="launch-item" onclick="openWindow('todoWin')"><div class="launch-icon">📝</div><div>Todo Task</div></div>
+            <div class="launch-item" onclick="openWindow('fortuneWin')"><div class="launch-icon">⭐</div><div>Fortune</div></div>
+            <div class="launch-item" onclick="openWindow('memoryWin')"><div class="launch-icon">🧠</div><div>Memory</div></div>
+            <div class="launch-item" onclick="openWindow('stopwatchWin')"><div class="launch-icon">⏳</div><div>Stopwatch</div></div>
+            <div class="launch-item" onclick="openWindow('colorWin')"><div class="launch-icon">🎨</div><div>Color Pk</div></div>
+            <div class="launch-item" onclick="openWindow('breakoutWin')"><div class="launch-icon">🧱</div><div>Breakout</div></div>
+            <div class="launch-item" onclick="openWindow('resourceWin')"><div class="launch-icon">📊</div><div>Resources</div></div>
+            <div class="launch-item" onclick="openWindow('logWin')"><div class="launch-icon">📜</div><div>Sys Logs</div></div>
+            <div class="launch-item" onclick="openWindow('trashWin')"><div class="launch-icon">🗑</div><div>Trash Utility</div></div>
+        </div>
+    </div>
+</div>
+
+<div id="aboutWin" class="window" style="width: 250px; height: 130px; top: 60px; left: 40px; display: none;">
+    <div class="title-bar"><div class="close-box" onclick="closeWindow('aboutWin')"></div><div class="title-text">About This System</div><div></div></div>
+    <div class="window-content">
+        <p style="margin:0 0 4px 0;">AT System Software v5.0</p>
+        <p style="margin:0; font-weight:normal; font-size:11px;">MUI_BITTLE Processor Architecture.<br>Emulated Stack Core Layer: 86KB RAM.<br>All systems safe and operational.</p>
+    </div>
+</div>
+
+<div id="filesWin" class="window" style="width: 280px; height: 230px; top: 80px; left: 240px; display: none;">
+    <div class="title-bar"><div class="close-box" onclick="closeWindow('filesWin')"></div><div class="title-text">File Manager</div><div></div></div>
+    <div class="window-content" id="file-list"></div>
+</div>
+
+<div id="termWin" class="window" style="width: 320px; height: 210px; top: 120px; left: 380px; display: none;">
+    <div class="title-bar"><div class="close-box" onclick="closeWindow('termWin')"></div><div class="title-text">Command Terminal</div><div></div></div>
+    <div class="window-content">
+        <div class="term-box" id="termBox">
+            <div class="term-out" id="termOut">AT-EMU CORE TERMINAL MONITOR v1.0<br>Type "help" for layout paths.</div>
+        </div>
+        <div class="term-row"><span>$ </span><input type="text" id="termInput" class="term-input" autocomplete="off"></div>
+    </div>
+</div>
+
+<div id="calcWin" class="window" style="width: 210px; height: 255px; top: 140px; left: 60px; display: none;">
+    <div class="title-bar"><div class="close-box" onclick="closeWindow('calcWin')"></div><div class="title-text">Calc</div><div></div></div>
+    <div class="window-content">
+        <div id="calcDisplay" class="calc-screen">0</div>
+        <div class="calc-grid">
+            <button class="mac-btn" onclick="pressCalc('C')">C</button>
+            <button class="mac-btn" onclick="pressCalc('/')">/</button>
+            <button class="mac-btn" onclick="pressCalc('*')">*</button>
+            <button class="mac-btn" onclick="pressCalc('-')">-</button>
+            <button class="mac-btn" onclick="pressCalc('7')">7</button>
+            <button class="mac-btn" onclick="pressCalc('8')">8</button>
+            <button class="mac-btn" onclick="pressCalc('9')">9</button>
+            <button class="mac-btn" onclick="pressCalc('+')">+</button>
+            <button class="mac-btn" onclick="pressCalc('4')">4</button>
+            <button class="mac-btn" onclick="pressCalc('5')">5</button>
+            <button class="mac-btn" onclick="pressCalc('6')">6</button>
+            <button class="mac-btn" onclick="pressCalc('=')">=</button>
+            <button class="mac-btn" onclick="pressCalc('1')">1</button>
+            <button class="mac-btn" onclick="pressCalc('2')">2</button>
+            <button class="mac-btn" onclick="pressCalc('3')">3</button>
+            <button class="mac-btn" onclick="pressCalc('0')">0</button>
+        </div>
+    </div>
+</div>
+
+<div id="noteWin" class="window" style="width: 280px; height: 220px; top: 150px; left: 160px; display: none;">
+    <div class="title-bar"><div class="close-box" onclick="closeWindow('noteWin')"></div><div class="title-text">Notepad Pro</div><div></div></div>
+    <div class="window-content">
+        <textarea id="notepadText" class="mac-editor" placeholder="Save logs here..."></textarea><br>
+        <button class="mac-btn" onclick="saveNotepad()">Save Disk</button><span id="save-status" style="font-size:10px; margin-left:5px;"></span>
+    </div>
+</div>
+
+<div id="paintWin" class="window" style="width: 280px; height: 230px; top: 80px; left: 520px; display: none;">
+    <div class="title-bar"><div class="close-box" onclick="closeWindow('paintWin')"></div><div class="title-text">MacPaint Pro</div><div></div></div>
+    <div class="window-content">
+        <canvas id="paintCanvas" class="paint-canvas" width="254" height="130"></canvas>
+        <div class="paint-controls" style="margin-top: 6px;">
+            <button class="mac-btn" onclick="setPaintColor('#000')">Ink Pen</button>
+            <button class="mac-btn" onclick="setPaintColor('#fff')">Eraser Block</button>
+            <button class="mac-btn" onclick="clearPaintCanvas()">Clear All</button>
+        </div>
+    </div>
+</div>
+
+<div id="thermalWin" class="window" style="width: 230px; height: 150px; top: 220px; left: 450px; display: none;">
+    <div class="title-bar"><div class="close-box" onclick="closeWindow('thermalWin')"></div><div class="title-text">Thermal Monitor</div><div></div></div>
+    <div class="window-content">
+        <div>MUI_BITTLE Core Temperature:</div>
+        <div style="font-size: 24px; margin: 8px 0; font-family: monospace;" id="thermalTemp">55.2 °C</div>
+        <div style="font-size:11px; color:#444;">Bus State: Normal Clocking Throttle</div>
+    </div>
+</div>
+
+<div id="snakeWin" class="window" style="width: 240px; height: 260px; top: 40px; left: 480px; display: none;">
+    <div class="title-bar"><div class="close-box" onclick="closeWindow('snakeWin')"></div><div class="title-text">MacSnake Arcade</div><div></div></div>
+    <div class="window-content" style="text-align:center;">
+        <div id="snakeScore" style="font-size:11px; margin-bottom:4px;">Score: 0 | Target: 10</div>
+        <canvas id="snakeCanvas" class="game-canvas" width="200" height="150"></canvas>
+        <button class="mac-btn" style="margin-top:6px;" onclick="startSnake()">Start Game</button>
+    </div>
+</div>
+
+<div id="raceWin" class="window" style="width: 240px; height: 260px; top: 180px; left: 200px; display: none;">
+    <div class="title-bar"><div class="close-box" onclick="closeWindow('raceWin')"></div><div class="title-text">MicroRacer Arena</div><div></div></div>
+    <div class="window-content" style="text-align:center;">
+        <canvas id="raceCanvas" class="game-canvas" width="200" height="160"></canvas>
+        <button class="mac-btn" style="margin-top:6px;" onclick="startRace()">Drive</button>
+    </div>
+</div>
+
+<div id="defragWin" class="window" style="width: 250px; height: 160px; top: 280px; left: 40px; display: none;">
+    <div class="title-bar"><div class="close-box" onclick="closeWindow('defragWin')"></div><div class="title-text">Disk Defrag</div><div></div></div>
+    <div class="window-content">
+        <div>Optimizing Sector Blocks (86KB Volume):</div>
+        <div class="bar-container"><div id="defragBar" class="bar-fill"></div></div>
+        <div id="defragText" style="font-size:11px;">Status: Fragmented index registers.</div>
+        <button class="mac-btn" onclick="runDefrag()">Optimize Clusters</button>
+    </div>
+</div>
+
+<div id="settingsWin" class="window" style="width: 240px; height: 150px; top: 260px; left: 320px; display: none;">
+    <div class="title-bar"><div class="close-box" onclick="closeWindow('settingsWin')"></div><div class="title-text">Control Panel</div><div></div></div>
+    <div class="window-content">
+        <div>Desktop Background Setup:</div>
+        <button class="mac-btn" onclick="setTheme('classic')">Classic Mesh Grid</button>
+        <button class="mac-btn" onclick="setTheme('dark')">Pure Stark Black</button>
+        <button class="mac-btn" onclick="setTheme('light')">Pure Stark White</button>
+    </div>
+</div>
+
+<div id="driverWin" class="window" style="width: 250px; height: 160px; top: 290px; left: 450px; display: none;">
+    <div class="title-bar"><div class="close-box" onclick="closeWindow('driverWin')"></div><div class="title-text">DriverCheck+</div><div></div></div>
+    <div class="window-content" id="driver-container">Unscanned bus status.<br><button class="mac-btn" onclick="this.parentElement.innerHTML='System verified safe.'">Scan Bus</button></div>
+</div>
+
+<div id="floppyWin" class="window" style="width: 260px; height: 160px; top: 100px; left: 50px; display: none;">
+    <div class="title-bar"><div class="close-box" onclick="closeWindow('floppyWin')"></div><div class="title-text">Floppy Drive A:</div><div></div></div>
+    <div class="window-content">
+        <div>Sector Allocator Stack Status:</div>
+        <div id="floppyStatus" style="font-family:monospace; margin: 8px 0;">[No Disk Loaded]</div>
+        <button class="mac-btn" onclick="document.getElementById('floppyStatus').textContent='TRACK 00: MOUNTED OK'">Mount Sector A</button>
+        <button class="mac-btn" onclick="document.getElementById('floppyStatus').textContent='EJECTED SUCCESSFULLY'">Eject Disk</button>
+    </div>
+</div>
+
+<div id="todoWin" class="window" style="width: 250px; height: 180px; top: 110px; left: 290px; display: none;">
+    <div class="title-bar"><div class="close-box" onclick="closeWindow('todoWin')"></div><div class="title-text">Todo Manager</div><div></div></div>
+    <div class="window-content">
+        <div style="display:flex; gap:4px; margin-bottom:8px;">
+            <input type="text" id="todoInput" style="flex:1; border:1px solid #000; font-family:inherit;" placeholder="Add new stack item...">
+            <button class="mac-btn" onclick="addTodoItem()">Add</button>
+        </div>
+        <div id="todoContainer" style="overflow-y:auto; height:90px;"></div>
+    </div>
+</div>
+
+<div id="fortuneWin" class="window" style="width: 240px; height: 140px; top: 140px; left: 190px; display: none;">
+    <div class="title-bar"><div class="close-box" onclick="closeWindow('fortuneWin')"></div><div class="title-text">Fortune Cookie</div><div></div></div>
+    <div class="window-content" style="text-align:center;">
+        <div id="fortuneDisplay" style="font-family:monospace; font-size:11px; margin-bottom:8px; min-height:40px;">Click below to read the system matrix fortune core.</div>
+        <button class="mac-btn" onclick="generateFortune()">Crack Cookie</button>
+    </div>
+</div>
+
+<div id="memoryWin" class="window" style="width: 220px; height: 230px; top: 70px; left: 400px; display: none;">
+    <div class="title-bar"><div class="close-box" onclick="closeWindow('memoryWin')"></div><div class="title-text">Memory Match</div><div></div></div>
+    <div class="window-content">
+        <div class="memory-grid" id="memoryGrid"></div>
+        <button class="mac-btn" style="display:block; margin:8px auto 0 auto;" onclick="initMemoryGame()">Restart Game</button>
+    </div>
+</div>
+
+<div id="stopwatchWin" class="window" style="width: 220px; height: 140px; top: 210px; left: 100px; display: none;">
+    <div class="title-bar"><div class="close-box" onclick="closeWindow('stopwatchWin')"></div><div class="title-text">Precision Stopwatch</div><div></div></div>
+    <div class="window-content" style="text-align:center;">
+        <div id="stopwatchDisplay" style="font-size:26px; font-family:monospace; margin:6px 0;">0.00s</div>
+        <button class="mac-btn" onclick="toggleStopwatch(this)">Start</button>
+        <button class="mac-btn" onclick="resetStopwatch()">Clear</button>
+    </div>
+</div>
+
+<div id="colorWin" class="window" style="width: 230px; height: 150px; top: 150px; left: 490px; display: none;">
+    <div class="title-bar"><div class="close-box" onclick="closeWindow('colorWin')"></div><div class="title-text">Color Picker</div><div></div></div>
+    <div class="window-content" style="text-align:center;">
+        <div>Select Simulated Register Palette:</div>
+        <input type="color" id="hexPicker" style="width:60px; height:30px; border:1px solid #000; margin:8px;" onchange="updateHexLabel(this.value)">
+        <div id="hexLabel" style="font-family:monospace;">HEX: #000000</div>
+    </div>
+</div>
+
+<div id="breakoutWin" class="window" style="width: 240px; height: 270px; top: 90px; left: 350px; display: none;">
+    <div class="title-bar"><div class="close-box" onclick="closeWindow('breakoutWin')"></div><div class="title-text">Breakout Arcade</div><div></div></div>
+    <div class="window-content" style="text-align:center;">
+        <canvas id="breakoutCanvas" class="game-canvas" width="200" height="160"></canvas>
+        <button class="mac-btn" style="margin-top:6px;" onclick="startBreakout()">Launch Paddle</button>
+    </div>
+</div>
+
+<div id="resourceWin" class="window" style="width: 250px; height: 160px; top: 260px; left: 180px; display: none;">
+    <div class="title-bar"><div class="close-box" onclick="closeWindow('resourceWin')"></div><div class="title-text">Heap Monitor</div><div></div></div>
+    <div class="window-content">
+        <div>System Application Stack Array:</div>
+        <div class="bar-container"><div id="heapBar" class="bar-fill" style="width: 32%;"></div></div>
+        <div id="heapText" style="font-family:monospace; font-size:10px;">RAM Allocation: 27,512 / 86,000 Bytes</div>
+    </div>
+</div>
+
+<div id="logWin" class="window" style="width: 290px; height: 180px; top: 190px; left: 280px; display: none;">
+    <div class="title-bar"><div class="close-box" onclick="closeWindow('logWin')"></div><div class="title-text">System Frame Logs</div><div></div></div>
+    <div class="window-content">
+        <div class="term-box" style="height:120px;" id="sysLogBox">
+            <div class="term-out" id="sysLogOut" style="font-size:10px;">[00:00:01] Core interrupt listening initialized...</div>
+        </div>
+    </div>
+</div>
+
+<div id="trashWin" class="window" style="width: 230px; height: 140px; top: 300px; left: 420px; display: none;">
+    <div class="title-bar"><div class="close-box" onclick="closeWindow('trashWin')"></div><div class="title-text">Trash Collector</div><div></div></div>
+    <div class="window-content" style="text-align:center;">
+        <div id="trashStatus" style="margin-bottom:8px;">Trash contains dirty block buffers.</div>
+        <button class="mac-btn" onclick="emptyTrashCan()">Purge Cache Directories</button>
+    </div>
+</div>
+
+
+<script>
+    let highestZ = 100;
+
+    // --- STICKY LOCK MENU BAR MECHANICS ---
+    function toggleMenu(event, dropdownId) {
+        event.stopPropagation();
+        const targetDropdown = document.getElementById(dropdownId);
+        const parentItem = targetDropdown.parentElement;
+        const isAlreadyActive = parentItem.classList.contains('active');
+        
+        closeAllMenus();
+        if (!isAlreadyActive) {
+            parentItem.classList.add('active');
+        }
+    }
+
+    function closeAllMenus() {
+        document.querySelectorAll('.menu-item').forEach(item => {
+            item.classList.remove('active');
+        });
+    }
+
+    document.addEventListener('click', () => { closeAllMenus(); });
+
+    // --- SLOW PRINT TECH READOUT BOOT ENGINE ---
+    window.addEventListener('DOMContentLoaded', () => {
+        runBootSequence();
+        initNotepad();
+        initFileManager();
+        initPaint();
+        initTerminal();
+        initThermalLoop();
+        initMemoryGame();
+        initResourceMonitor();
+    });
+
+    function getBrowserEngine() {
+        const ua = navigator.userAgent;
+        if (ua.includes("Chromium") || ua.includes("Chrome")) return "Chromium Pipeline Engine";
+        if (ua.includes("Safari") && !ua.includes("Chrome")) return "WebKit Engine Core";
+        if (ua.includes("Firefox")) return "Gecko Quantum Substrate";
+        return "Generic Standard DOM Renderer";
+    }
+
+    function runBootSequence() {
+        const logBox = document.getElementById('boot-log');
+        const engine = getBrowserEngine();
+        
+        const bootLines = [
+            "Initializing AT Monitor Core...",
+            `Using web browser: ${engine}`,
+            "Using Graphics adapter: Software Framebuffer Proxy",
+            "Using Emulated RAM: 86KB Core Matrix",
+            "Using Emulated CPU: MUI_BITTLE @ 968KHz",
+            "Verifying sector maps...",
+            "Loading Desk Accessories... OK",
+            "Ready."
+        ];
+
+        let currentLine = 0;
+        function printLine() {
+            if (currentLine < bootLines.length) {
+                logBox.textContent += bootLines[currentLine] + "\n";
+                currentLine++;
+                setTimeout(printLine, 1100); 
+            } else {
+                setTimeout(() => {
+                    document.getElementById('boot-screen').style.display = 'none';
+                }, 800);
+            }
+        }
+        printLine();
+    }
+
+    // --- WINDOW CONTROL DESK ENGINE ---
+    function openWindow(id) { 
+        const win = document.getElementById(id); 
+        win.style.display = 'flex'; 
+        focusWindow(win); 
+        closeAllMenus();
+        addLogEntry(`Opened application context node: ${id}`);
+    }
+    function closeWindow(id) { document.getElementById(id).style.display = 'none'; }
+    function focusWindow(win) { highestZ++; win.style.zIndex = highestZ; }
+
+    document.querySelectorAll('.window').forEach(win => {
+        win.addEventListener('mousedown', () => focusWindow(win));
+        const title = win.querySelector('.title-bar');
+        title.addEventListener('mousedown', (e) => {
+            if (e.target.classList.contains('close-box')) return;
+            let shiftX = e.clientX - win.getBoundingClientRect().left;
+            let shiftY = e.clientY - win.getBoundingClientRect().top;
+            function move(ev) {
+                let topPos = ev.clientY - shiftY;
+                win.style.left = (ev.clientX - shiftX) + 'px';
+                win.style.top = (topPos < 24 ? 24 : topPos) + 'px';
+            }
+            function up() { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up); }
+            document.addEventListener('mousemove', move); document.addEventListener('mouseup', up);
+        });
+    });
+
+    // --- CORE FILE REGISTER SPECS (22 Applications Mapping Matrix) ---
+    const files = [
+        { name: "About Architecture", target: "aboutWin" },
+        { name: "Breakout Game", target: "breakoutWin" },
+        { name: "Calculator Bin", target: "calcWin" },
+        { name: "Color Picker Matrix", target: "colorWin" },
+        { name: "Control Panel", target: "settingsWin" },
+        { name: "Disk Defragmenter", target: "defragWin" },
+        { name: "Driver Config Check", target: "driverWin" },
+        { name: "File Explorer Core", target: "filesWin" },
+        { name: "Floppy Mount Handler", target: "floppyWin" },
+        { name: "Fortune Kernel String", target: "fortuneWin" },
+        { name: "Launchpad Main Array", target: "launchpadWin" },
+        { name: "MacPaint Pro Suite", target: "paintWin" },
+        { name: "Memory Match Binary", target: "memoryWin" },
+        { name: "MicroRacer Engine", target: "raceWin" },
+        { name: "Notepad Writer Log", target: "noteWin" },
+        { name: "Resource Heap Meter", target: "resourceWin" },
+        { name: "Snake Game System", target: "snakeWin" },
+        { name: "Stopwatch Module", target: "stopwatchWin" },
+        { name: "System Log Archive", target: "logWin" },
+        { name: "Terminal Command Shell", target: "termWin" },
+        { name: "Thermal Sensor Hub", target: "thermalWin" },
+        { name: "Todo Task Scheduler", target: "todoWin" },
+        { name: "Trash Clean Cache", target: "trashWin" }
+    ];
+    function initFileManager() {
+        const list = document.getElementById('file-list');
+        list.innerHTML = "";
+        files.sort((a,b) => a.name.localeCompare(b.name)).forEach(f => {
+            const div = document.createElement('div'); div.className = "file-row";
+            div.innerHTML = `<span style='margin-right:8px;'>⚙</span><span>${f.name}</span>`;
+            div.onclick = () => openWindow(f.target);
+            list.appendChild(div);
+        });
+    }
+
+    // --- EMULATED SHELL TERMINAL APPLICATION ---
+    function initTerminal() {
+        const input = document.getElementById('termInput');
+        const out = document.getElementById('termOut');
+        
+        input.addEventListener('keydown', (e) => {
+            if(e.key === 'Enter') {
+                const cmd = input.value.trim().toLowerCase();
+                out.innerHTML += `<br>$ ${escapeHtml(input.value)}`;
+                
+                if (cmd === 'help') {
+                    out.innerHTML += "<br>Commands: ls, clear, ram, sysinfo, open [app]";
+                } else if (cmd === 'ls') {
+                    out.innerHTML += "<br>apps/   system/   notelogs.txt   floppy_sector_0.bin";
+                } else if (cmd === 'clear') {
+                    out.innerHTML = "Terminal Cleared.";
+                } else if (cmd === 'ram') {
+                    out.innerHTML += "<br>Allocated: 86KB | Free: 14KB";
+                } else if (cmd === 'sysinfo') {
+                    out.innerHTML += "<br>CPU: MUI_BITTLE @ 968KHz<br>BUS: Retro Clock Bridge v5";
+                } else if (cmd.startsWith('open ')) {
+                    const targetApp = cmd.substring(5);
+                    let found = files.find(f => f.name.toLowerCase().includes(targetApp));
+                    if (found) { openWindow(found.target); out.innerHTML += `<br>Launching ${found.name}...`; }
+                    else { out.innerHTML += `<br>Unknown target subsystem: "${escapeHtml(targetApp)}"`; }
+                } else if(cmd !== "") {
+                    out.innerHTML += `<br>Syntax Error: "${escapeHtml(cmd)}" unknown.`;
+                }
+                input.value = "";
+                document.getElementById('termBox').scrollTop = document.getElementById('termBox').scrollHeight;
+            }
+        });
+    }
+
+    function escapeHtml(text) { return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+
+    // --- NOTEPAD CONTROLLER ---
+    function initNotepad() {
+        const d = localStorage.getItem('mac_suite_note');
+        if (d) document.getElementById('notepadText').value = d;
+    }
+    function saveNotepad() {
+        localStorage.setItem('mac_suite_note', document.getElementById('notepadText').value);
+        const st = document.getElementById('save-status'); st.textContent = "DISK WRITTEN";
+        setTimeout(() => st.textContent = "", 2000);
+        addLogEntry("Wrote sector blocks to localStorage notebook buffer.");
+    }
+
+    // --- REALTIME THERMAL APP LOOP ---
+    function initThermalLoop() {
+        const display = document.getElementById('thermalTemp');
+        setInterval(() => {
+            const temp = (50 + Math.random() * 12).toFixed(1);
+            display.textContent = `${temp} °C`;
+        }, 2000);
+    }
+
+    // --- SMOOTH TRACKING MACPAINT PRO IMPLEMENTATION (FIXED SCALE) ---
+    let pCanvas, pCtx, isPainting = false, pColor = '#000';
+    function initPaint() {
+        pCanvas = document.getElementById('paintCanvas'); pCtx = pCanvas.getContext('2d');
+        pCtx.lineWidth = 3;
+        pCtx.lineCap = 'round';
+        pCtx.lineJoin = 'round';
+        
+        // Use bounding rect calculations relative to drawing layout context bounds to eliminate jagged lag
+        pCanvas.addEventListener('mousedown', (e) => { isPainting = true; drawPaint(e); });
+        pCanvas.addEventListener('mousemove', drawPaint);
+        window.addEventListener('mouseup', () => { isPainting = false; pCtx.beginPath(); });
+    }
+    function drawPaint(e) {
+        if (!isPainting) return;
+        const rect = pCanvas.getBoundingClientRect();
+        const clientX = e.clientX - rect.left;
+        const clientY = e.clientY - rect.top;
+        
+        pCtx.strokeStyle = pColor;
+        pCtx.lineTo(clientX, clientY);
+        pCtx.stroke();
+        pCtx.beginPath();
+        pCtx.moveTo(clientX, clientY);
+    }
+    function setPaintColor(c) { pColor = c; pCtx.beginPath(); }
+    function clearPaintCanvas() { pCtx.clearRect(0,0,pCanvas.width,pCanvas.height); pCtx.beginPath(); }
+
+    // --- RETRO CALCULATOR ENGINE ---
+    let calcVal = '0';
+    function pressCalc(b) {
+        const s = document.getElementById('calcDisplay');
+        if (b === 'C') calcVal = '0';
+        else if (b === '=') { try { calcVal = eval(calcVal).toString(); } catch { calcVal = 'ERR'; } }
+        else { calcVal = (calcVal === '0' && !isNaN(b)) ? b : calcVal + b; }
+        s.textContent = calcVal;
+    }
+
+    // --- APPLICATION EXTENSION SCRIPTS (10 UTILITIES LOGIC) ---
+    
+    // Todo App Logic
+    function addTodoItem() {
+        const val = document.getElementById('todoInput').value.trim();
+        if(!val) return;
+        const item = document.createElement('div'); item.className="todo-item";
+        item.innerHTML = `<input type="checkbox" onclick="this.parentElement.remove()"> <span>${escapeHtml(val)}</span>`;
+        document.getElementById('todoContainer').appendChild(item);
+        document.getElementById('todoInput').value = "";
+    }
+
+    // Fortune App Logic
+    const fortunes = [
+        "A system crash cleared is code earned.", "MUI_BITTLE processor says: Keep clock rates steady.",
+        "An unexpected error will bring wisdom to your stack.", "Your memory allocations look highly optimized today.",
+        "Beware of loose dangling pointers in your arrays."
+    ];
+    function generateFortune() {
+        document.getElementById('fortuneDisplay').textContent = fortunes[Math.floor(Math.random() * fortunes.length)];
+    }
+
+    // Memory Game Logic
+    let memoryIcons = ['⭐','⭐','⚃','⚃','🐚','🐚','🐍','🐍','🏎','🏎','💾','💾','🎨','🎨','⚡','⚡'], cardValues=[], cardIds=[], matchedCards=[];
+    function initMemoryGame() {
+        const grid = document.getElementById('memoryGrid'); grid.innerHTML = "";
+        cardValues=[]; cardIds=[]; matchedCards=[];
+        let shuffled = memoryIcons.sort(() => 0.5 - Math.random());
+        for(let i=0; i<16; i++) {
+            let card = document.createElement('div'); card.className="memory-card";
+            card.dataset.index = i; card.dataset.icon = shuffled[i]; card.textContent = "?";
+            card.onclick = flipMemoryCard; grid.appendChild(card);
+        }
+    }
+    function flipMemoryCard() {
+        if(cardIds.length >= 2 || this.classList.contains('flipped') || matchedCards.includes(this.dataset.index)) return;
+        this.textContent = this.dataset.icon; this.classList.add('flipped');
+        cardValues.push(this.dataset.icon); cardIds.push(this.dataset.index);
+        if(cardValues.length === 2) { setTimeout(checkMemoryMatch, 700); }
+    }
+    function checkMemoryMatch() {
+        let cards = document.querySelectorAll('.memory-card');
+        if(cardValues[0] === cardValues[1]) {
+            matchedCards.push(cardIds[0], cardIds[1]);
+        } else {
+            cards[cardIds[0]].textContent = "?"; cards[cardIds[0]].classList.remove('flipped');
+            cards[cardIds[1]].textContent = "?"; cards[cardIds[1]].classList.remove('flipped');
+        }
+        cardValues=[]; cardIds=[];
+    }
+
+    // Stopwatch Logic
+    let swTime = 0, swInterval = null;
+    function toggleStopwatch(btn) {
+        if(swInterval) { clearInterval(swInterval); swInterval=null; btn.textContent="Start"; }
+        else { btn.textContent="Stop"; swInterval = setInterval(()=>{swTime+=0.01; document.getElementById('stopwatchDisplay').textContent=swTime.toFixed(2)+'s';}, 10); }
+    }
+    function resetStopwatch() { clearInterval(swInterval); swInterval=null; swTime=0; document.getElementById('stopwatchDisplay').textContent="0.00s"; }
+
+    // Color Picker Logic
+    function updateHexLabel(val) { document.getElementById('hexLabel').textContent = `HEX: ${val.toUpperCase()}`; }
+
+    // Breakout Logic
+    let bCanvas, bCtx, bx, by, bdx=2, bdy=-2, bpaddleX=75, bBricks=[], bInterval=null;
+    function startBreakout() {
+        bCanvas = document.getElementById('breakoutCanvas'); bCtx = bCanvas.getContext('2d');
+        bx = 100; by = 120; bdx=2; bdy=-2; bpaddleX=75; bBricks=[];
+        for(let c=0; c<4; c++) { bBricks[c]=[]; for(let r=0; r<5; r++) { bBricks[c][r] = { x: 0, y: 0, status: 1 }; } }
+        clearInterval(bInterval); bInterval = setInterval(drawBreakout, 40);
+    }
+    function drawBreakout() {
+        bCtx.clearRect(0, 0, 200, 160);
+        // Draw bricks
+        for(let c=0; c<4; c++) {
+            for(let r=0; r<5; r++) {
+                if(bBricks[c][r].status === 1) {
+                    let brickX = (r*(32+4))+10; let brickY = (c*(10+4))+20;
+                    bBricks[c][r].x = brickX; bBricks[c][r].y = brickY;
+                    bCtx.fillStyle = "#000"; bCtx.fillRect(brickX, brickY, 32, 10);
+                }
+            }
+        }
+        // Ball logic
+        bCtx.beginPath(); bCtx.arc(bx, by, 4, 0, Math.PI*2); bCtx.fillStyle = "#000"; bCtx.fill(); bCtx.closePath();
+        // Paddle logic
+        bCtx.fillRect(bpaddleX, 150, 40, 6);
+
+        // Brick collision
+        for(let c=0; c<4; c++) {
+            for(let r=0; r<5; r++) {
+                let b = bBricks[c][r];
+                if(b.status === 1) {
+                    if(bx > b.x && bx < b.x+32 && by > b.y && by < b.y+10) { bdy = -bdy; b.status = 0; }
+                }
+            }
+        }
+
+        if(bx + bdx > 196 || bx + bdx < 4) bdx = -bdx;
+        if(by + bdy < 4) bdy = -bdy;
+        else if(by + bdy > 146) {
+            if(bx > bpaddleX && bx < bpaddleX + 40) bdy = -bdy;
+            else { clearInterval(bInterval); bCtx.fillText("HALT CRASH", 70, 90); }
+        }
+        bx += bdx; by += bdy;
+    }
+
+    // Heap Monitoring Graph
+    function initResourceMonitor() {
+        setInterval(() => {
+            let usage = Math.floor(20000 + Math.random() * 30000);
+            let pct = ((usage / 86000) * 100).toFixed(0);
+            document.getElementById('heapBar').style.width = pct + "%";
+            document.getElementById('heapText').textContent = `RAM Allocation: ${usage.toLocaleString()} / 86,000 Bytes`;
+        }, 1200);
+    }
+
+    // Frame Logging Utility Tracker
+    function addLogEntry(text) {
+        const logBox = document.getElementById('sysLogOut');
+        if(logBox) { logBox.innerHTML += `<br>[${new Date().toTimeString().split(' ')[0]}] ${text}`; }
+    }
+
+    // Trash Can Logic
+    function emptyTrashCan() {
+        document.getElementById('trashStatus').textContent = "Directories Cleaned. 0 Blocks Used.";
+        addLogEntry("Purged dirty volatile cache lines.");
+    }
+
+    // --- MACSNAKE ARCADE ENGINE ---
+    let sCanvas, sCtx, snake, food, dir, sInterval, sScore;
+    function startSnake() {
+        sCanvas = document.getElementById('snakeCanvas'); sCtx = sCanvas.getContext('2d');
+        snake = [{x: 40, y: 40}, {x: 30, y: 40}]; food = {x: 80, y: 80}; dir = 'RIGHT'; sScore = 0;
+        document.getElementById('snakeScore').textContent = "Score: 0 | Target: 10";
+        clearInterval(sInterval); sInterval = setInterval(updateSnake, 130);
+    }
+    function updateSnake() {
+        let head = Object.assign({}, snake[0]);
+        if (dir === 'RIGHT') head.x += 10; if (dir === 'LEFT') head.x -= 10;
+        if (dir === 'DOWN') head.y += 10; if (dir === 'UP') head.y -= 10;
+
+        if (head.x < 0 || head.x >= 200 || head.y < 0 || head.y >= 150) { return endSnakeGame(false); }
+        for (let i = 0; i < snake.length; i++) { if (snake[i].x === head.x && snake[i].y === head.y) return endSnakeGame(false); }
+
+        snake.unshift(head);
+        if (Math.abs(head.x - food.x) < 8 && Math.abs(head.y - food.y) < 8) {
+            sScore++; document.getElementById('snakeScore').textContent = `Score: ${sScore} | Target: 10`;
+            if (sScore >= 10) return endSnakeGame(true);
+            food = { x: Math.floor(Math.random() * 19) * 10, y: Math.floor(Math.random() * 14) * 10 };
+        } else { snake.pop(); }
+
+        sCtx.fillStyle = '#fff'; sCtx.fillRect(0,0,200,150);
+        sCtx.fillStyle = '#000'; snake.forEach(p => sCtx.fillRect(p.x, p.y, 8, 8));
+        sCtx.fillRect(food.x, food.y, 8, 8);
+    }
+    function endSnakeGame(win) { clearInterval(sInterval); sCtx.fillStyle='#fff'; sCtx.fillRect(10,45,180,50); sCtx.strokeRect(10,45,180,50); sCtx.fillStyle='#000'; sCtx.fillText(win ? "REGISTERS CLEAN: WIN" : "CORE CRASH: LOSE", 25, 75); }
+
+    // --- MICRORACER GAME ENGINE ---
+    let rCanvas, rCtx, playerX, obstacles, rInterval, rScore;
+    function startRace() {
+        rCanvas = document.getElementById('raceCanvas'); rCtx = rCanvas.getContext('2d');
+        playerX = 90; rScore = 0; obstacles = [{x: 50, y: 0}, {x: 130, y: -80}];
+        clearInterval(rInterval); rInterval = setInterval(updateRace, 50);
+    }
+    function updateRace() {
+        rCtx.fillStyle = '#fff'; rCtx.fillRect(0,0,200,160);
+        rCtx.fillStyle = '#000'; rCtx.fillRect(20, 0, 2, 160); rCtx.fillRect(180, 0, 2, 160);
+        rCtx.fillRect(playerX, 130, 16, 22);
+
+        obstacles.forEach(o => {
+            o.y += 5; if(o.y > 160) { o.y = -20; o.x = 30 + Math.random() * 120; rScore++; }
+            rCtx.fillRect(o.x, o.y, 14, 14);
+            if (o.y + 14 >= 130 && o.y <= 152 && o.x + 14 >= playerX && o.x <= playerX + 16) {
+                clearInterval(rInterval); rCtx.fillStyle = '#fff'; rCtx.fillRect(40,65,120,30); rCtx.strokeRect(40,65,120,30); rCtx.fillStyle = '#000'; rCtx.fillText("CRASH! SCORE: " + rScore, 55, 84);
+            }
+        });
+    }
+
+    // --- CONTROL PANEL WORKSPACE THEMES ---
+    function setTheme(type) {
+        if(type === 'classic') { document.body.style.backgroundImage = "radial-gradient(#666 25%, transparent 25%), radial-gradient(#666 25%, transparent 25%)"; document.body.style.backgroundColor = "#999"; }
+        else if(type === 'dark') { document.body.style.backgroundImage = "none"; document.body.style.backgroundColor = "#111"; }
+        else if(type === 'light') { document.body.style.backgroundImage = "none"; document.body.style.backgroundColor = "#eee"; }
+    }
+
+    // --- DISK DEFRAGMENTER ENGINE ---
+    function runDefrag() {
+        const bar = document.getElementById('defragBar'); const txt = document.getElementById('defragText'); let progress = 0; txt.textContent = "Reorganizing storage clusters...";
+        const interval = setInterval(() => { progress += 10; bar.style.width = progress + "%"; if(progress >= 100) { clearInterval(interval); txt.textContent = "Status: 100% Defragmented."; } }, 300);
+    }
+
+    // Global Input Mapping Controls
+    window.addEventListener('keydown', (e) => {
+        if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) { if(document.activeElement.id !== "termInput" && document.activeElement.id !== "todoInput") e.preventDefault(); }
+        if (e.key === 'ArrowRight' && dir !== 'LEFT') dir = 'RIGHT'; if (e.key === 'ArrowLeft' && dir !== 'RIGHT') dir = 'LEFT';
+        if (e.key === 'ArrowDown' && dir !== 'UP') dir = 'DOWN'; if (e.key === 'ArrowUp' && dir !== 'DOWN') dir = 'UP';
+        if (e.key === 'ArrowLeft' && playerX > 25) playerX -= 10; if (e.key === 'ArrowRight' && playerX < 160) playerX += 10;
+        if (e.key === 'ArrowLeft' && bpaddleX > 5) bpaddleX -= 12; if (e.key === 'ArrowRight' && bpaddleX < 155) bpaddleX += 12;
+    });
+
+    setInterval(() => { document.getElementById('menu-clock').textContent = new Date().toTimeString().split(' ')[0]; }, 1000);
+</script>
+
+</body>
+</html>
