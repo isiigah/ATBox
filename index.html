@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AT Box - Boot Manager</title>
+    <title>AT</title>
     <style>
         * {
             box-sizing: border-box;
@@ -32,6 +32,7 @@
         .phase.active {
             display: flex;
             flex-direction: column;
+            overflow-y: auto;
         }
 
         /* ============ PHASE 1: CURSOR ============ */
@@ -98,20 +99,21 @@
             flex-direction: column;
             justify-content: flex-start;
             align-items: flex-start;
-            gap: 15px;
-            margin-top: 40px;
+            gap: 8px;
+            margin-top: 15px;
         }
 
         .menu-title {
             font-size: 18px;
             margin-bottom: 0px;
             margin-top: 20px;
+            color: #00ff00;
         }
 
         .menu-item {
             font-size: 18px;
             cursor: pointer;
-            padding: 5px 0px;
+            padding: 3px 0px;
             user-select: none;
             transition: background-color 0.1s;
             min-width: fit-content;
@@ -155,6 +157,8 @@
             margin-top: 20px;
             user-select: none;
             transition: background-color 0.1s;
+            border: 1px solid #fff;
+            width: fit-content;
         }
 
         .back-button:hover {
@@ -167,13 +171,13 @@
             flex-direction: column;
             justify-content: flex-start;
             align-items: flex-start;
-            gap: 20px;
-            margin-top: 40px;
+            gap: 15px;
+            margin-top: 20px;
         }
 
         .confirmation-text {
             font-size: 18px;
-            margin-bottom: 20px;
+            margin-bottom: 5px;
             line-height: 1.7;
             white-space: pre-line;
         }
@@ -186,21 +190,22 @@
         }
 
         .notification-box {
-            margin-top: 28px;
+            margin-top: 20px;
             max-width: 760px;
             border: 1px solid rgba(255, 255, 255, 0.35);
-            padding: 14px 16px;
+            padding: 12px 16px;
             background: rgba(255, 255, 255, 0.05);
         }
 
         .notification-title {
             font-size: 17px;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
+            font-weight: bold;
         }
 
         .notification-body {
             font-size: 15px;
-            line-height: 1.7;
+            line-height: 1.6;
             white-space: pre-line;
             color: #d6d6d6;
         }
@@ -240,102 +245,59 @@
 
         /* ============ MOBILE RESPONSIVENESS ============ */
         @media (max-width: 768px) {
-            .menu-title {
-                font-size: 14px;
-            }
-
-            .menu-item {
-                font-size: 14px;
-            }
-
-            .engine-check {
-                font-size: 14px;
-            }
-
-            .content-text {
-                font-size: 14px;
-            }
-
-            .confirmation-text {
-                font-size: 14px;
-            }
-
-            .back-button {
+            .menu-title, .menu-item, .engine-check, .content-text, .confirmation-text, .back-button {
                 font-size: 14px;
             }
         }
 
         @media (max-width: 480px) {
-            body {
-                padding: 10px;
-            }
-
-            .phase {
-                padding: 15px;
-            }
-
-            .menu-title {
+            body { padding: 10px; }
+            .phase { padding: 15px; }
+            .menu-title, .menu-item, .engine-check, .content-text, .confirmation-text, .back-button {
                 font-size: 12px;
             }
-
-            .menu-item {
-                font-size: 12px;
-            }
-
-            .engine-check {
-                font-size: 12px;
-            }
-
-            .content-text {
-                font-size: 12px;
-            }
-
-            .confirmation-text {
-                font-size: 12px;
-            }
-
-            .back-button {
-                font-size: 12px;
-            }
-
-            .cursor {
-                font-size: 10px;
-            }
+            .cursor { font-size: 10px; }
         }
     </style>
 </head>
 <body>
 
-<!-- PHASE 1: CURSOR ANIMATION -->
 <div id="phase1" class="phase active">
     <div class="cursor">_</div>
 </div>
 
-<!-- PHASE 2: ENGINE CHECK -->
 <div id="phase2" class="phase">
     <div class="crt-overlay"></div>
     <div class="engine-check" id="engineText">Checking Website Engine...</div>
 </div>
 
-<!-- PHASE 3: BOOT MANAGER MENU -->
 <div id="phase3" class="phase">
     <div style="margin-bottom: 5px;">
         <div style="font-size: 18px; margin-bottom: 5px;">AT Box ASTITY Utility</div>
         <div style="font-size: 18px; margin-bottom: 0px;">(C) 2026 - AT Box Systems</div>
     </div>
+    
     <div class="menu-title">What would you like to do?</div>
     <div class="menu-container" id="mainMenu">
         <div class="menu-item" data-action="explore">Explore AT Box</div>
         <div class="menu-item" data-action="updlog">Check Update Logs</div>
         <div class="menu-item" data-action="credits">Credits</div>
     </div>
-    <div class="notification-box">
-        <div class="notification-title">???</div>
-        <div class="notification-body">I don't know, you check it yourself</div>
+
+    <div class="menu-title">Latest Projects</div>
+    <div class="menu-container" id="projectMenu">
+        <div class="menu-item" data-action="mac5">AT 5.0 Macintosh Remake</div>
+    </div>
+
+    <div class="notification-box" style="border-color: #00ff00; background: rgba(0, 255, 0, 0.03);">
+        <div class="notification-title" style="color: #00ff00;">🚨 SYSTEM ALERT: BUILD RECONSTRUCTION COMPLETE</div>
+        <div class="notification-body">
+            A brand new operational subsystem has been deployed: **AT 5.0 Macintosh Remake**. 
+            This environment features full layout dynamic pixel tracking loops to bypass legacy ink rendering lag, alongside an expanded 22-binary application suite stack array.
+        </div>
     </div>
 </div>
 
-<!-- PHASE 4: CONTENT DISPLAY -->
 <div id="phase4" class="phase">
     <div class="content-container">
         <div class="content-text" id="contentText"></div>
@@ -343,7 +305,6 @@
     <div class="back-button" onclick="goBackToMenu()">Back</div>
 </div>
 
-<!-- PHASE 5: EXPLORE AT BOX SUB-MENU -->
 <div id="phase5" class="phase">
     <div class="menu-title">Explore AT Box</div>
     <div class="menu-container" id="exploreMenu">
@@ -353,7 +314,6 @@
     <div class="back-button" onclick="goBackToMenu()">Back</div>
 </div>
 
-<!-- PHASE 5a: EMULATION CONFIRMATION -->
 <div id="phase5a" class="phase">
     <div class="confirmation-container">
         <div class="confirmation-text">Choose an Operating System Build</div>
@@ -362,9 +322,11 @@
 ATBOX (VISTA) 1.13.2
 ATBOX (FOX) 1.0
 ATBOX (AURORA) 1.0
+ATBOX (MACINTOSH) 5.0
 
 LONG LOST (???)</div>
         <div class="menu-container" style="margin-top: 15px;" id="confirmMenu">
+            <div class="menu-item" data-action="mac5_direct">AT 5.0 Macintosh Remake</div>
             <div class="menu-item" data-action="vista">AT Box (Codename Vista)</div>
             <div class="menu-item" data-action="fox">AT Box (Codename Fox)</div>
             <div class="menu-item" data-action="aurora">ATBox (Codename Aurora)</div>
@@ -381,39 +343,28 @@ LONG LOST (???)</div>
     // ============ STATE MACHINE ============
     let currentPhase = 1;
     let currentMenuSelection = 0;
+    let currentProjectSelection = 0;
     let currentExploreSelection = 0;
     let currentConfirmSelection = 0;
-    let sourcePhase = 3; // Track where content viewing came from
+    let sourcePhase = 3; 
+    let activeMenuFocus = 'mainMenu'; // Track where key arrow focus is anchored
 
     // ============ BROWSER DETECTION ============
     function detectBrowserEngine() {
         const userAgent = navigator.userAgent;
-        
-        if (/Chrome|Chromium|CriOS/.test(userAgent) && !/Edge|Edg/.test(userAgent)) {
-            return 'Chromium';
-        } else if (/Safari/.test(userAgent) && !/Chrome|CriOS/.test(userAgent)) {
-            return 'WebKit';
-        } else if (/Firefox|FxiOS/.test(userAgent)) {
-            return 'Gecko';
-        } else if (/Edge|Edg/.test(userAgent)) {
-            return 'EdgeHTML';
-        } else {
-            return 'UNKNOWN';
-        }
+        if (/Chrome|Chromium|CriOS/.test(userAgent) && !/Edge|Edg/.test(userAgent)) return 'Chromium';
+        if (/Safari/.test(userAgent) && !/Chrome|CriOS/.test(userAgent)) return 'WebKit';
+        if (/Firefox|FxiOS/.test(userAgent)) return 'Gecko';
+        if (/Edge|Edg/.test(userAgent)) return 'EdgeHTML';
+        return 'UNKNOWN';
     }
 
     // ============ PHASE TRANSITION HELPERS ============
     function showPhase(phaseNum) {
-        // Hide all phases
         document.querySelectorAll('.phase').forEach(p => p.classList.remove('active'));
-        
-        // Show target phase
         const phaseId = `phase${phaseNum}`;
         const phaseElement = document.getElementById(phaseId);
-        if (phaseElement) {
-            phaseElement.classList.add('active');
-        }
-        
+        if (phaseElement) phaseElement.classList.add('active');
         currentPhase = phaseNum;
     }
 
@@ -421,9 +372,7 @@ LONG LOST (???)</div>
         const currentPhaseEl = document.querySelector('.phase.active');
         if (currentPhaseEl) {
             currentPhaseEl.classList.add('fade-out-phase');
-            setTimeout(() => {
-                callback();
-            }, duration);
+            setTimeout(() => { callback(); }, duration);
         } else {
             callback();
         }
@@ -432,12 +381,8 @@ LONG LOST (???)</div>
     // ============ PHASE 1: CURSOR ============
     function initPhase1() {
         showPhase(1);
-        
-        // After 1 second of blinking, fade to black
         setTimeout(() => {
-            fadeToBlackThen(() => {
-                initPhase2();
-            }, 1000);
+            fadeToBlackThen(() => { initPhase2(); }, 1000);
         }, 1000);
     }
 
@@ -447,16 +392,11 @@ LONG LOST (???)</div>
         const engineText = document.getElementById('engineText');
         engineText.textContent = '> Checking Website Engine...';
         
-        // After 3 seconds, append engine info
         setTimeout(() => {
             const engine = detectBrowserEngine();
             engineText.textContent = '> Checking Website Engine...\n> WEBENGINE_' + engine;
-            
-            // Hold for 1 second, then fade to black
             setTimeout(() => {
-                fadeToBlackThen(() => {
-                    initPhase3();
-                }, 1000);
+                fadeToBlackThen(() => { initPhase3(); }, 1000);
             }, 1000);
         }, 3000);
     }
@@ -466,96 +406,79 @@ LONG LOST (???)</div>
         currentPhase = 3;
         sourcePhase = 3;
         currentMenuSelection = 0;
+        currentProjectSelection = 0;
+        activeMenuFocus = 'mainMenu';
         document.querySelectorAll('.phase').forEach(p => {
             p.classList.remove('active');
             p.classList.remove('fade-out-phase');
         });
         document.getElementById('phase3').classList.add('active');
-        updateMainMenuSelection();
+        updateMenuSelections();
         setupMenuInteraction('mainMenu');
+        setupMenuInteraction('projectMenu');
     }
 
-    function updateMainMenuSelection() {
-        const items = document.querySelectorAll('#mainMenu .menu-item');
-        items.forEach((item, idx) => {
-            if (idx === currentMenuSelection) {
-                item.classList.add('selected');
-            } else {
-                item.classList.remove('selected');
-            }
+    function updateMenuSelections() {
+        // Clear and highlight main menu items
+        document.querySelectorAll('#mainMenu .menu-item').forEach((item, idx) => {
+            if (activeMenuFocus === 'mainMenu' && idx === currentMenuSelection) item.classList.add('selected');
+            else item.classList.remove('selected');
+        });
+        // Clear and highlight project menu items
+        document.querySelectorAll('#projectMenu .menu-item').forEach((item, idx) => {
+            if (activeMenuFocus === 'projectMenu' && idx === currentProjectSelection) item.classList.add('selected');
+            else item.classList.remove('selected');
         });
     }
 
     function setupMenuInteraction(menuId) {
         const menuItems = document.querySelectorAll(`#${menuId} .menu-item`);
         menuItems.forEach((item) => {
-            if (item.dataset.bound === 'true') {
-                return;
-            }
-
+            if (item.dataset.bound === 'true') return;
             item.addEventListener('click', () => {
                 const action = item.dataset.action;
-                if (menuId === 'mainMenu') {
-                    handleMainMenuAction(action);
-                } else if (menuId === 'exploreMenu') {
-                    handleExploreAction(action);
-                } else if (menuId === 'confirmMenu') {
-                    handleConfirmAction(action);
-                }
+                if (menuId === 'mainMenu') handleMainMenuAction(action);
+                else if (menuId === 'projectMenu') handleProjectMenuAction(action);
+                else if (menuId === 'exploreMenu') handleExploreAction(action);
+                else if (menuId === 'confirmMenu') handleConfirmAction(action);
             });
-
             item.dataset.bound = 'true';
         });
     }
 
     function handleMainMenuAction(action) {
-        if (action === 'explore') {
-            fadeToBlackThen(() => initPhase5(), 500);
-        } else if (action === 'updlog') {
-            fadeToBlackThen(() => displayContent('updlog'), 500);
-        } else if (action === 'credits') {
-            fadeToBlackThen(() => displayContent('credits'), 500);
-        }
+        if (action === 'explore') fadeToBlackThen(() => initPhase5(), 500);
+        else if (action === 'updlog') fadeToBlackThen(() => displayContent('updlog'), 500);
+        else if (action === 'credits') fadeToBlackThen(() => displayContent('credits'), 500);
+    }
+
+    function handleProjectMenuAction(action) {
+        if (action === 'mac5') launchOperatingSystem('mac5.html'); // Links to the newly deployed architecture file
     }
 
     // ============ PHASE 4: CONTENT DISPLAY ============
     async function displayContent(type) {
-        let filePath = '';
-        if (type === 'updlog') {
-            filePath = 'assets/updlog.txt';
-        } else if (type === 'credits') {
-            filePath = 'assets/credits.txt';
-        }
-
+        let filePath = type === 'updlog' ? 'assets/updlog.txt' : 'assets/credits.txt';
         try {
             const response = await fetch(filePath);
             if (!response.ok) throw new Error('File not found');
-            
             let content = await response.text();
-            if (!content || content.trim().length === 0) {
-                content = 'Information not available.';
-            }
+            if (!content || content.trim().length === 0) content = 'Information not available.';
             
-            // Add > prefix to each line
             const lines = content.split('\n');
             const prefixedContent = lines.map(line => line.trim() ? '> ' + line : '').join('\n');
             document.getElementById('contentText').textContent = prefixedContent;
         } catch (error) {
-            console.warn('Failed to load file:', filePath, error);
-            document.getElementById('contentText').textContent = '> Information not available.\n> \n> If you\'re running this locally, start a web server:\n> python3 -m http.server 8000\n> Then visit: http://localhost:8000';
+            document.getElementById('contentText').textContent = '> Information not available.\n>\n> Launch standalone locally using an active server.';
         }
-
         sourcePhase = 3;
         showPhase(4);
     }
 
     function goBackToMenu() {
         fadeToBlackThen(() => {
-            if (sourcePhase === 5) {
-                initPhase5();
-            } else if (sourcePhase === 3) {
-                initPhase3();
-            }
+            if (sourcePhase === 5) initPhase5();
+            else if (sourcePhase === 3) initPhase3();
         }, 500);
     }
 
@@ -574,22 +497,15 @@ LONG LOST (???)</div>
     }
 
     function updateExploreMenuSelection() {
-        const items = document.querySelectorAll('#exploreMenu .menu-item');
-        items.forEach((item, idx) => {
-            if (idx === currentExploreSelection) {
-                item.classList.add('selected');
-            } else {
-                item.classList.remove('selected');
-            }
+        document.querySelectorAll('#exploreMenu .menu-item').forEach((item, idx) => {
+            if (idx === currentExploreSelection) item.classList.add('selected');
+            else item.classList.remove('selected');
         });
     }
 
     function handleExploreAction(action) {
-        if (action === 'emulation') {
-            fadeToBlackThen(() => showPhase5a(), 500);
-        } else if (action === 'about') {
-            fadeToBlackThen(() => displayAbout(), 500);
-        }
+        if (action === 'emulation') fadeToBlackThen(() => showPhase5a(), 500);
+        else if (action === 'about') fadeToBlackThen(() => displayAbout(), 500);
     }
 
     function showPhase5a() {
@@ -602,47 +518,31 @@ LONG LOST (???)</div>
     }
 
     function updateConfirmMenuSelection() {
-        const items = document.querySelectorAll('#confirmMenu .menu-item');
-        items.forEach((item, idx) => {
-            if (idx === currentConfirmSelection) {
-                item.classList.add('selected');
-            } else {
-                item.classList.remove('selected');
-            }
+        document.querySelectorAll('#confirmMenu .menu-item').forEach((item, idx) => {
+            if (idx === currentConfirmSelection) item.classList.add('selected');
+            else item.classList.remove('selected');
         });
     }
 
     function handleConfirmAction(action) {
-        if (action === 'vista') {
-            launchOperatingSystem('atbox.html');
-        } else if (action === 'fox') {
-            launchOperatingSystem('atfox.html');
-        } else if (action === 'aurora') {
-            launchOperatingSystem('aurora.html');
-        } else if (action === 'lost') {
-            launchOperatingSystem('ATDOS.html');
-        }
+        if (action === 'mac5_direct') launchOperatingSystem('mac5.html');
+        else if (action === 'vista') launchOperatingSystem('atbox.html');
+        else if (action === 'fox') launchOperatingSystem('atfox.html');
+        else if (action === 'aurora') launchOperatingSystem('aurora.html');
+        else if (action === 'lost') launchOperatingSystem('ATDOS.html');
     }
 
     async function displayAbout() {
         try {
             const response = await fetch('assets/about.txt');
             if (!response.ok) throw new Error('File not found');
-            
             let content = await response.text();
-            if (!content || content.trim().length === 0) {
-                content = 'Information not available.';
-            }
-            
-            // Add > prefix to each line
             const lines = content.split('\n');
             const prefixedContent = lines.map(line => line.trim() ? '> ' + line : '').join('\n');
             document.getElementById('contentText').textContent = prefixedContent;
         } catch (error) {
-            console.warn('Failed to load about.txt:', error);
-            document.getElementById('contentText').textContent = '> Information not available.\n> \n> If you\'re running this locally, start a web server:\n> python3 -m http.server 8000\n> Then visit: http://localhost:8000';
+            document.getElementById('contentText').textContent = '> AT Box Custom Environment Virtualization Framework Module.';
         }
-
         sourcePhase = 5;
         showPhase(4);
     }
@@ -650,36 +550,50 @@ LONG LOST (???)</div>
     function launchOperatingSystem(targetPage) {
         const activePhase = document.querySelector('.phase.active');
         const overlay = document.getElementById('screenOverlay');
-
-        if (activePhase) {
-            activePhase.classList.add('fade-out-phase');
-        }
-
-        setTimeout(() => {
-            overlay.classList.add('active');
-        }, 500);
-
-        setTimeout(() => {
-            window.location.href = targetPage;
-        }, 1500);
+        if (activePhase) activePhase.classList.add('fade-out-phase');
+        setTimeout(() => { overlay.classList.add('active'); }, 500);
+        setTimeout(() => { window.location.href = targetPage; }, 1500);
     }
 
-    // ============ KEYBOARD NAVIGATION ============
+    // ============ KEYBOARD MONITOR NAVIGATION MAP ============
     document.addEventListener('keydown', (e) => {
         if (currentPhase === 3) {
-            const items = document.querySelectorAll('#mainMenu .menu-item');
+            const mainItems = document.querySelectorAll('#mainMenu .menu-item');
+            const projectItems = document.querySelectorAll('#projectMenu .menu-item');
+            
             if (e.key === 'ArrowUp') {
                 e.preventDefault();
-                currentMenuSelection = (currentMenuSelection - 1 + items.length) % items.length;
-                updateMainMenuSelection();
+                if (activeMenuFocus === 'projectMenu') {
+                    if (currentProjectSelection > 0) {
+                        currentProjectSelection--;
+                    } else {
+                        activeMenuFocus = 'mainMenu';
+                        currentMenuSelection = mainItems.length - 1;
+                    }
+                } else {
+                    currentMenuSelection = (currentMenuSelection - 1 + mainItems.length) % mainItems.length;
+                }
+                updateMenuSelections();
             } else if (e.key === 'ArrowDown') {
                 e.preventDefault();
-                currentMenuSelection = (currentMenuSelection + 1) % items.length;
-                updateMainMenuSelection();
+                if (activeMenuFocus === 'mainMenu') {
+                    if (currentMenuSelection < mainItems.length - 1) {
+                        currentMenuSelection++;
+                    } else {
+                        activeMenuFocus = 'projectMenu';
+                        currentProjectSelection = 0;
+                    }
+                } else {
+                    currentProjectSelection = (currentProjectSelection + 1) % projectItems.length;
+                }
+                updateMenuSelections();
             } else if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
-                const action = items[currentMenuSelection].dataset.action;
-                handleMainMenuAction(action);
+                if (activeMenuFocus === 'mainMenu') {
+                    handleMainMenuAction(mainItems[currentMenuSelection].dataset.action);
+                } else {
+                    handleProjectMenuAction(projectItems[currentProjectSelection].dataset.action);
+                }
             }
         } else if (currentPhase === 5) {
             const items = document.querySelectorAll('#exploreMenu .menu-item');
@@ -693,8 +607,7 @@ LONG LOST (???)</div>
                 updateExploreMenuSelection();
             } else if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
-                const action = items[currentExploreSelection].dataset.action;
-                handleExploreAction(action);
+                handleExploreAction(items[currentExploreSelection].dataset.action);
             }
         } else if (currentPhase === '5a') {
             const items = document.querySelectorAll('#confirmMenu .menu-item');
@@ -708,16 +621,12 @@ LONG LOST (???)</div>
                 updateConfirmMenuSelection();
             } else if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
-                const action = items[currentConfirmSelection].dataset.action;
-                handleConfirmAction(action);
+                handleConfirmAction(items[currentConfirmSelection].dataset.action);
             }
         }
     });
 
-    // ============ INITIALIZE ============
-    window.addEventListener('load', () => {
-        initPhase1();
-    });
+    window.addEventListener('load', () => { initPhase1(); });
 </script>
 
 </body>
