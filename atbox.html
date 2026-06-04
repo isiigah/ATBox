@@ -18,11 +18,105 @@
     --accent-border: rgba(255,0,0,0.5);
 }
 
+</style>
+
+<script>
+try {
+    var a = localStorage.getItem('atbox_saved_accent');
+    if (a) document.documentElement.style.setProperty('--accent', a);
+} catch(e) {}
+</script>
+
+<style>
+
 html, body {
     margin: 0;
     background: black !important;
     overflow: hidden;
     font-family: Segoe UI, Arial, sans-serif;
+}
+
+#globalBootBios {
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#globalBootBiosContent {
+    display: grid;
+    grid-template-columns: 1fr minmax(220px, 360px);
+    gap: 24px;
+    align-items: flex-start;
+    min-height: 0;
+    width: min(1100px, calc(100vw - 40px));
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+#biosDetails {
+    overflow: hidden;
+    max-height: 320px;
+}
+
+#biosDetailsInner {
+    max-height: 100%;
+    overflow-y: scroll;
+    padding-right: 4px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+#biosDetailsInner::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+}
+
+#globalBootMenuOverlay {
+    position: absolute;
+    inset: 0;
+    display: none;
+    z-index: 2147483647;
+    background: rgba(0, 0, 0, 0.96);
+}
+
+#globalBootMenuOverlay > div {
+    position: absolute;
+    top: 50%;
+    left: 8%;
+    transform: translateY(-50%);
+    max-width: 420px;
+    border: 1px solid rgba(255,255,255,0.12);
+    padding: 18px;
+    border-radius: 10px;
+    background: rgba(15,15,15,0.98);
+}
+
+@media (max-width: 940px) {
+    #globalBootBios {
+        padding: 16px;
+    }
+    #globalBootBiosContent {
+        grid-template-columns: 1fr;
+        width: calc(100vw - 32px);
+    }
+    #globalBootMenuOverlay {
+        padding: 10px;
+    }
+}
+
+@media (max-width: 720px) {
+    #globalBootBios {
+        padding: 10px;
+        font-size: 14px;
+    }
+    #globalBootBiosContent {
+        width: calc(100vw - 24px);
+        gap: 16px;
+    }
+    #globalBootMenuOverlay > div {
+        max-width: 100%;
+    }
 }
 
 /* Loader */
@@ -370,7 +464,7 @@ html, body {
     min-width: 42px;
     min-height: 42px;
     border-radius: 50%;
-    background: linear-gradient(to bottom, var(--accent), var(--taskbar) 82%, rgba(0,0,0,0.9)) !important;
+    background: linear-gradient(to bottom, var(--accent), var(--taskbar) 82%, rgba(0,0,0,0.9));
     display: flex;
     align-items: center;
     justify-content: center;
@@ -388,6 +482,9 @@ html, body {
     letter-spacing: 0;
     text-shadow: 0 1px 2px rgba(0,0,0,0.75);
     transition: transform 0.18s ease, filter 0.18s ease;
+    background-size: cover !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
 }
 
 /* optional glow safety layer (prevents “stuck red feel”) */
@@ -497,93 +594,189 @@ html, body {
 }
 
 /* Start Menu */
+/* Start Menu - High-Fidelity Windows Vista Aero Hybrid Layout */
 .start-menu {
     position: fixed;
-    bottom: calc(var(--taskbar-height) + 6px);
-    left: 8px;
-    width: 320px;
-    background: linear-gradient(180deg, rgba(22,22,22,0.98), rgba(8,8,8,0.98));
-    border: 1px solid #222;
-    display: none;
+    bottom: calc(var(--taskbar-height) + 4px);
+    left: 4px;
+    width: 280px;
+    height: 480px;
+    background: linear-gradient(135deg, rgba(10,10,10,0.85), rgba(0,0,0,0.92)) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 
+        0 0 1px 1px rgba(255,255,255,0.08) inset,
+        0 12px 28px rgba(0,0,0,0.85);
     z-index: 2147483001;
-    border-radius: 8px;
-    box-shadow: 0 -8px 24px rgba(0,0,0,0.7);
-    animation: slideUp 0.3s ease;
+    border-radius: 0;
     overflow: hidden;
+    display: none;
+    box-sizing: border-box;
+    backdrop-filter: blur(20px) saturate(140%) !important;
+    animation: slideFromLeft 0.15s ease-out;
 }
 
-@keyframes slideUp {
-    from { transform: translateY(20px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
+@keyframes slideFromLeft {
+    from { transform: translateX(-24px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
 }
 
-.menu-section {
-    padding: 8px;
-    border-bottom: 1px solid #444;
-}
-
-.menu-item {
-    padding: 8px 12px;
-    color: #ddd;
-    cursor: pointer;
-    font-size: 12px;
+.start-menu-inner {
     display: flex;
-    align-items: center;
-    gap: 8px;
-    border-radius: 2px;
+    width: 100%;
+    height: calc(100% - 46px);
 }
 
-.menu-item:hover {
-    background: var(--accent-soft);
-    color: white;
-}
-
-.menu-item.app-disabled,
-.icon.app-disabled {
-    opacity: 0.45;
-    filter: grayscale(1);
-    cursor: not-allowed;
-}
-
-.menu-item.app-disabled:hover {
-    background: transparent;
-    color: #ddd;
-}
-
-.menu-item-icon {
-    font-size: 16px;
-}
-
-.shutdown-options {
+.start-sidebar-banner {
+    width: 38px;
+    position: relative;
+    background: linear-gradient(135deg, 
+        rgba(255, 255, 255, 0.18) 0%, 
+        var(--accent-soft) 40%, 
+        rgba(0, 0, 0, 0.45) 100%
+    ) !important;
     display: flex;
-    gap: 6px;
-    justify-content: flex-end;
-    padding: 8px;
-    border-top: 1px solid #444;
-}
-
-.shutdown-btn {
-    width: 40px;
-    height: 40px;
-    border: none;
-    border-radius: 4px;
-    background: var(--accent-soft);
-    border: 1px solid var(--accent-border);
-    color: white;
-    font-size: 18px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
+    align-items: flex-end;
     justify-content: center;
-    transition: 0.2s;
+    padding-bottom: 16px;
+    box-sizing: border-box;
+    border-right: 1px solid rgba(255, 255, 255, 0.15);
+    overflow: hidden;
+    box-shadow: inset -1px 0 0 rgba(0,0,0,0.3);
 }
 
-.shutdown-btn:hover {
-    background: var(--accent-glow);
+.start-sidebar-banner::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+        rgba(255,255,255,0.12) 0%, 
+        rgba(255,255,255,0.03) 50%, 
+        transparent 100%
+    );
+    pointer-events: none;
 }
 
-.shutdown-btn:active {
-    transform: scale(0.95);
+.start-sidebar-banner::after {
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: -20%;
+    width: 140%;
+    height: 120%;
+    background: radial-gradient(circle at 50% 0%, rgba(255,255,255,0.15), transparent 65%);
+    transform: rotate(-15deg);
+    pointer-events: none;
+}
+
+.start-sidebar-text {
+    color: #ffffff;
+    font-family: "Segoe UI", Arial, sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    text-shadow: 
+        0 0 4px rgba(0, 0, 0, 0.6),
+        0 0 10px var(--accent-glow);
+    z-index: 2;
+    opacity: 0.95;
+}
+
+.start-programs-feed {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 6px 3px;
+    overflow-y: auto;
+    background: #000000;
+}
+
+.start-programs-feed::-webkit-scrollbar {
+    width: 8px;
+}
+.start-programs-feed::-webkit-scrollbar-track {
+    background: #000000;
+}
+.start-programs-feed::-webkit-scrollbar-thumb {
+    background: #000000;
+    border: none;
+}
+
+.start-program-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    color: #dfdfdf;
+    font-family: "Segoe UI", Arial, sans-serif;
+    font-size: 12px;
+    cursor: pointer;
+    border-radius: 3px;
+    user-select: none;
+    transition: background 0.08s, color 0.08s;
+}
+
+.start-program-row:hover {
+    background: var(--accent-soft);
+    color: #ffffff;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05);
+}
+
+.start-row-icon {
+    font-size: 16px;
+    width: 20px;
+    text-align: center;
+    display: inline-block;
+}
+
+.start-row-label {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.start-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.08);
+    margin: 4px 8px;
+}
+
+.start-action-deck {
+    height: 46px;
+    background: rgba(0,0,0,0.4);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 0 12px;
+    box-sizing: border-box;
+}
+
+.start-action-btn {
+    height: 28px;
+    padding: 0 12px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #bbb;
+    font-family: inherit;
+    font-size: 11px;
+    border-radius: 3px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.1s, color 0.1s;
+}
+
+.start-action-btn:hover {
+    background: var(--accent-soft);
+    border-color: var(--accent-border);
+    color: #fff;
 }
 
 /* Clock */
@@ -610,6 +803,24 @@ html, body {
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.22);
     white-space: nowrap;
     flex-shrink: 0;
+    cursor: pointer;
+}
+
+.clock-popup {
+    position: fixed;
+    bottom: calc(var(--taskbar-height) + 6px);
+    right: 8px;
+    width: 260px;
+    background: linear-gradient(180deg, rgba(22,22,22,0.98), rgba(8,8,8,0.98));
+    border: 1px solid #333;
+    display: none;
+    z-index: 2147483002;
+    border-radius: 8px;
+    box-shadow: 0 -8px 24px rgba(0,0,0,0.7);
+    animation: slideUp 0.3s ease;
+    overflow: hidden;
+    padding: 12px;
+    font-family: monospace;
 }
 
 .exp-sb-item {
@@ -687,6 +898,43 @@ html, body {
     pointer-events: none;
 }
 
+.icon.app-disabled {
+    cursor: not-allowed;
+    opacity: 0.34;
+    filter: grayscale(1) brightness(0.34) contrast(1.15);
+}
+
+.icon.app-disabled:hover {
+    background: rgba(0,0,0,0.32);
+    border-color: rgba(255,255,255,0.04);
+}
+
+.icon.app-disabled::after {
+    content: "";
+    position: absolute;
+    inset: 4px 8px 18px;
+    background: rgba(0,0,0,0.46);
+    border-radius: 4px;
+    pointer-events: none;
+}
+
+.icon.app-disabled .icon-img,
+.icon.app-disabled .icon-label {
+    color: #777;
+    text-shadow: none;
+}
+
+.start-program-row.app-disabled {
+    cursor: not-allowed;
+    opacity: 0.38;
+    filter: grayscale(1) brightness(0.42);
+}
+
+.start-program-row.app-disabled:hover {
+    background: rgba(0,0,0,0.28);
+    color: #888;
+}
+
 /* WINDOW */
 .window {
     position: absolute;
@@ -708,6 +956,10 @@ html, body {
     border-radius: 8px 8px 6px 6px;
     backdrop-filter: blur(14px) saturate(130%);
     will-change: transform;
+}
+
+.window.dragging {
+    backdrop-filter: none !important;
 }
 
 .window-template {
@@ -936,6 +1188,7 @@ body.os-booting #desktop {
     cursor: se-resize;
     background: #888;
     border-radius: 2px;
+    touch-action: none;
 }
 
 .window-opening {
@@ -1468,12 +1721,260 @@ textarea {
     font-size: 14px;
     color: #000;
 }
+
+/* Windows 7 Aero Glass theme */
+body.theme-aero .window {
+    background: rgba(20, 28, 50, 0.45) !important;
+    box-shadow:
+        0 24px 50px rgba(0,0,0,0.55),
+        0 0 30px rgba(0,0,0,0.25),
+        inset 0 1px 0 rgba(255,255,255,0.18) !important;
+    border-color: rgba(180, 210, 255, 0.25) !important;
+    backdrop-filter: blur(18px) saturate(160%) !important;
+}
+
+body.theme-aero .titlebar {
+    background:
+        linear-gradient(to bottom,
+            rgba(255,255,255,0.35) 0%,
+            rgba(255,255,255,0.08) 30%,
+            rgba(255,255,255,0.02) 60%,
+            rgba(0,0,0,0.08) 100%) !important;
+    border-bottom: 1px solid rgba(255,255,255,0.15) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.28) !important;
+    text-shadow: 0 0 8px rgba(255,255,255,0.15), 0 1px 3px rgba(0,0,0,0.7) !important;
+}
+
+body.theme-aero .titlebar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(to bottom,
+        rgba(255,255,255,0.08) 0%,
+        transparent 50%,
+        rgba(0,0,0,0.04) 100%);
+    pointer-events: none;
+}
+
+body.theme-aero .content {
+    background: transparent !important;
+}
+
+body.theme-aero .win-btns {
+    background: linear-gradient(to bottom, #6a6a7a 0%, #3e3e4e 40%, #1a1a2a 100%) !important;
+    border-color: rgba(0,0,0,0.7) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.2),
+        0 1px 6px rgba(0,0,0,0.5) !important;
+}
+
+body.theme-aero .btn {
+    border-right-color: rgba(0,0,0,0.6) !important;
+    border-left-color: rgba(255,255,255,0.06) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.08) !important;
+}
+
+body.theme-aero .btn:hover {
+    background: linear-gradient(to bottom, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.08) 100%) !important;
+}
+
+body.theme-aero .win-btns .btn:last-child {
+    background: linear-gradient(to bottom, #6a3a3a 0%, #4a2020 40%, #2a0e0e 100%) !important;
+}
+
+body.theme-aero .win-btns .btn:last-child:hover {
+    background: linear-gradient(to bottom, #d44a4a 0%, #a22828 40%, #6a1010 100%) !important;
+}
+
+.login-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent-soft), rgba(0,0,0,0.5));
+    border: 2px solid var(--accent-border);
+    box-shadow: 0 0 24px var(--accent-glow), 0 4px 16px rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    color: #fff;
+}
+
+.login-username-label {
+    font-family: Consolas, monospace;
+    font-size: 18px;
+    color: #ffffff;
+    font-weight: bold;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.9), 0 0 20px var(--accent-glow);
+    letter-spacing: 0.5px;
+}
+
+.login-input {
+    padding: 10px 16px;
+    width: 240px;
+    background: rgba(0,0,0,0.45);
+    border: 1px solid var(--accent-border);
+    border-radius: 6px;
+    color: #f0f0f0;
+    font-family: Consolas, monospace;
+    font-size: 13px;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.login-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 12px var(--accent-glow);
+}
+
+.login-btn {
+    padding: 9px 36px;
+    background: var(--accent-soft);
+    border: 1px solid var(--accent-border);
+    border-radius: 6px;
+    color: #fff;
+    font-family: Consolas, monospace;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.3),
+        0 0 16px var(--accent-glow),
+        0 3px 10px rgba(0,0,0,0.55);
+    transition: filter 0.18s, transform 0.14s;
+}
+.login-btn:hover { filter: brightness(1.15); transform: translateY(-1px); }
+.login-btn:active { transform: scale(0.97); }
+
+.login-divider {
+    width: 240px;
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--accent-border), transparent);
+}
+
+#loginScreen {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #000;
+    background-image: url('assets/oobewl.png');
+    background-size: cover;
+    background-position: center;
+    font-family: Consolas, monospace;
+}
+
+.login-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+}
+
+.login-error {
+    display: none;
+    color: #ff6666;
+    font-size: 12px;
+    font-family: Consolas, monospace;
+    text-shadow: 0 0 6px rgba(255,50,50,0.5);
+}
+
+.login-power-controls {
+    position: absolute;
+    bottom: 30px;
+    display: flex;
+    gap: 12px;
+}
+
+.login-power-btn {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 6px;
+    color: #ccc;
+    font-size: 18px;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+.login-power-btn:hover {
+    background: rgba(255,255,255,0.18);
+    color: #fff;
+}
 </style>
 </head>
 
 <body class="os-booting">
 
+<div id="globalBootLoader" style="position:fixed;inset:0;background:#000;z-index:2147483646;display:block;opacity:1;transition:opacity 0.8s ease;">
+    <img id="globalBootSplash" src="atboot.png" alt="ATBox boot splash" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 0.85s ease;">
+    <div id="globalBootBios" tabindex="-1" style="position:absolute;inset:0;display:none;background:#000;color:#fff;font-family:Consolas,'Courier New',monospace;padding:clamp(28px,3.2vw,62px);box-sizing:border-box;font-size:clamp(16px,1.68vw,32px);line-height:1.18;overflow:hidden;">
+        <div id="globalBootBiosContent" style="display:grid;grid-template-columns:1fr minmax(220px,360px);gap:24px;align-items:flex-start;min-height:0;">
+            <div style="flex:1 1 320px;min-width:280px;">
+                <div style="color:#9b0019;font-size:clamp(30px,3.65vw,68px);font-weight:800;margin-bottom:clamp(28px,3vw,52px);">AT Qualbird BIOS</div>
+                <div style="color:#fff;font-size:0.85em;margin-bottom:12px;font-family:'Courier New',monospace;">Press Enter to open help. Use Arrow Up / Arrow Down to scroll help text. Press F5 for boot menu.</div>
+                <div style="font-weight:800;">CPU: Limbo 1 @ 1.33GHz</div>
+                <div style="color:#ff7b18;font-weight:800;">CPU Core: 1 / 2 ATOM</div>
+                <div style="color:#ff7b18;font-weight:800;">CPU Overclock: Blocked by Emulation</div>
+                <div style="height:clamp(28px,3vw,52px);"></div>
+                <div style="font-weight:800;">MEM: 4096MB</div>
+                <div style="color:#ff7b18;font-weight:800;">Type: DDR3</div>
+                <div style="color:#ff7b18;font-weight:800;">Speed: 1333MT/s</div>
+                <div style="height:clamp(28px,3vw,52px);"></div>
+                <div style="font-weight:800;">BIOS: AT Qualbird Release 1.0.1-194</div>
+                <div style="color:#ff7b18;font-weight:800;">Date: 1-1-2008</div>
+                <div style="height:clamp(28px,3vw,52px);"></div>
+                <div style="font-weight:800;">Boot Device:</div>
+                <div style="color:#ff7b18;font-weight:800;">#1 AT Vista</div>
+                <div style="color:#ff7b18;font-weight:800;">#2 AT Fox</div>
+                <div style="color:#ff7b18;font-weight:800;">#3 AT DoS</div>
+                <div style="color:#ff7b18;font-weight:800;">#4 AT MAC</div>
+                <div style="color:#ff7b18;font-weight:800;">#5 AT Aurora</div>
+                <div style="height:clamp(28px,3vw,52px);"></div>
+                <div style="font-weight:800;">Features in BIOS are disabled, <span id="biosCheckWhy" style="color:#4d56ff;text-decoration:underline;cursor:pointer;">Check Why</span></div>
+                <div style="color:#fff;font-size:0.85em;margin-top:6px;font-family:'Courier New',monospace;">Press Enter to open or close BIOS help. Use Arrow Up / Arrow Down once help is open.</div>
+                <div id="biosOptions" style="margin-top:clamp(18px,2.2vw,40px);display:flex;flex-direction:column;gap:10px;max-width:420px;font-size:0.95em;">
+                    <div id="biosOptionCheck" style="color:#4d56ff;cursor:pointer;padding:10px 14px;border:1px solid rgba(77,86,255,0.25);border-radius:6px;">Check Why</div>
+                    <div id="biosOptionExit" style="color:#fff;cursor:pointer;padding:10px 14px;border:1px solid rgba(255,255,255,0.12);border-radius:6px;">Exit BIOS</div>
+                </div>
+                <div id="biosDetails" style="margin-top:14px;color:#c8c8c8;display:none;border-top:1px solid rgba(255,255,255,0.08);padding-top:14px;font-size:0.9em;font-family:'Courier New',monospace;overflow:hidden;max-height:320px;">
+                    <div id="biosDetailsInner" style="max-height:100%;overflow-y:auto;padding-right:4px;scrollbar-width:none;-ms-overflow-style:none;">
+                        <div style="color:#ff7b18;font-family:'Courier New',monospace;font-size:1.04em;font-weight:700;margin-bottom:10px;">AT BIOS Help</div>
+                        <div style="color:#ff7b18;font-family:'Courier New',monospace;margin-bottom:10px;">Why am I not able to access features?</div>
+                        <div style="color:#fff;font-family:'Courier New',monospace;line-height:1.6;margin-bottom:12px;">Press Enter to toggle this help panel, then use Arrow Up / Arrow Down to scroll.</div>
+                        <div style="color:#fff;font-family:'Courier New',monospace;line-height:1.6;">
+                            You are not able to access features in the BIOS because this is not a real system and only a virtualization view. The interface is a simulated firmware experience built for display and does not provide actual hardware control.
+                            <br><br>
+                            In this virtualized environment, BIOS functions remain locked to avoid showing options that cannot be applied or saved. The boot sequence is intentionally limited to navigation and read-only status information, so advanced BIOS toggles cannot be used.
+                            <br><br>
+                            This behavior helps keep the emulation stable and prevents inconsistent states. If a real BIOS were available, it would allow actual hardware configuration, but here it is purposely designed as a presentation-only view.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div style="min-width:clamp(230px,21vw,360px);flex:0 0 auto;color:#ff7b18;font-weight:800;padding-top:clamp(32px,3.6vw,66px);">
+                <div>TIME: <span id="globalBiosTime">--:--:--</span></div>
+                <div>DATE: <span id="globalBiosDate">--/--/----</span></div>
+                <div>CMOS: <span style="color:#20d360;">OK</span></div>
+            </div>
+        </div>
+    </div>
+    <div id="globalBootMenuOverlay" style="position:absolute;inset:0;display:none;z-index:2147483647;pointer-events:auto;background:rgba(0,0,0,0.96);">
+        <div style="position:absolute;top:50%;left:8%;transform:translateY(-50%);max-width:420px;color:#fff;font-family:Consolas,monospace;font-size:clamp(16px,1.8vw,28px);">
+            <div style="margin-bottom:10px;color:#ff7b18;">Boot Menu — Use F1-F6 to choose</div>
+            <div style="margin-bottom:14px;color:#fff;font-size:0.85em;">Press the matching function key for the desired boot option. No arrow selection is required.</div>
+            <div id="globalBootMenuList" style="display:grid;gap:10px;"></div>
+        </div>
+    </div>
+</div>
+
 <div class="container" id="bootScreen">
+    <div id="globalBootHint" style="position:absolute;top:12px;left:50%;transform:translateX(-50%);color:#fff;font-family:Consolas,monospace;font-size:13px;letter-spacing:0.03em;opacity:0.85;z-index:1000;pointer-events:none;">Press F5 for Boot Menu or F2 for BIOS</div>
 
     <!-- loader -->
     <div class="loader">
@@ -1550,13 +2051,15 @@ loading desktop elements...
     position:fixed;
     inset:0;
     background:black;
-    color:#ccc;
-    font-family:Consolas;
-    font-size:12px;
+    color:#ffffff;
+    font-family:Consolas, 'Courier New', monospace;
+    font-size:28px;
+    line-height:1.45;
     display:none;
-    padding:20px;
+    padding:72px 64px;
+    box-sizing:border-box;
 ">
-    <div id="bootText"></div>
+    <div id="bootText" style="white-space:pre-wrap;color:#ffffff;text-shadow:0 0 1px #ffffff;"></div>
 </div>
 
 <div id="diagnosticsScreen">
@@ -1660,144 +2163,6 @@ loading desktop elements...
     text-shadow: 0 0 6px rgba(255,50,50,0.5);
 }
 
-.oobe-footer {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 8px;
-}
-
-.oobe-btn {
-    padding: 9px 28px;
-    background: linear-gradient(to bottom,
-        rgba(220,60,60,0.75) 0%,
-        rgba(160,20,20,0.80) 55%,
-        rgba(100,5,5,0.85) 100%
-    );
-    border: 1px solid rgba(255,80,80,0.55);
-    border-radius: 6px;
-    color: #111;
-    font-family: Consolas, monospace;
-    font-size: 13px;
-    font-weight: bold;
-    cursor: pointer;
-    box-shadow:
-        inset 0 1px 0 rgba(255,255,255,0.3),
-        0 0 14px rgba(255,40,40,0.35),
-        0 3px 10px rgba(0,0,0,0.5);
-    transition: filter 0.2s, transform 0.15s, box-shadow 0.2s;
-    text-shadow: none;
-}
-.oobe-btn:hover {
-    filter: brightness(1.15);
-    transform: translateY(-1px);
-    box-shadow:
-        inset 0 1px 0 rgba(255,255,255,0.35),
-        0 0 22px rgba(255,60,60,0.5),
-        0 5px 14px rgba(0,0,0,0.55);
-}
-.oobe-btn:active { transform: scale(0.97); filter: brightness(0.95); }
-
-/* --- LOGIN SCREEN (Vista-style) --- */
-#loginScreen {
-    position: fixed;
-    inset: 0;
-    background-image: url('assets/oobewl.png');
-    background-size: cover;
-    background-position: center;
-    display: none;
-    z-index: 9999;
-    font-family: Consolas, monospace;
-    align-items: center;
-    justify-content: center;
-}
-
-.login-panel {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 16px;
-    padding: 40px 48px 36px;
-    background: transparent;
-    animation: oobeFadeIn 0.6s ease forwards;
-}
-
-.login-avatar {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, rgba(200,30,30,0.7), rgba(80,0,0,0.8));
-    border: 2px solid rgba(255,80,80,0.5);
-    box-shadow: 0 0 24px rgba(255,40,40,0.4), 0 4px 16px rgba(0,0,0,0.6);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 32px;
-    color: #fff;
-}
-
-.login-username-label {
-    font-family: Consolas, monospace;
-    font-size: 18px;
-    color: #ffffff;
-    font-weight: bold;
-    text-shadow: 0 2px 8px rgba(0,0,0,0.9), 0 0 20px rgba(255,40,40,0.3);
-    letter-spacing: 0.5px;
-}
-
-.login-input {
-    padding: 10px 16px;
-    width: 240px;
-    background: rgba(0,0,0,0.45);
-    border: 1px solid rgba(255,60,60,0.45);
-    border-radius: 6px;
-    color: #f0f0f0;
-    font-family: Consolas, monospace;
-    font-size: 13px;
-    text-align: center;
-    outline: none;
-    transition: border-color 0.2s, box-shadow 0.2s;
-}
-.login-input:focus {
-    border-color: rgba(255,80,80,0.85);
-    box-shadow: 0 0 12px rgba(255,40,40,0.35);
-}
-
-.login-btn {
-    padding: 9px 36px;
-    background: linear-gradient(to bottom,
-        rgba(220,60,60,0.78) 0%,
-        rgba(160,20,20,0.82) 55%,
-        rgba(100,5,5,0.88) 100%
-    );
-    border: 1px solid rgba(255,80,80,0.5);
-    border-radius: 6px;
-    color: #111;
-    font-family: Consolas, monospace;
-    font-size: 13px;
-    font-weight: bold;
-    cursor: pointer;
-    box-shadow:
-        inset 0 1px 0 rgba(255,255,255,0.3),
-        0 0 16px rgba(255,40,40,0.35),
-        0 3px 10px rgba(0,0,0,0.55);
-    transition: filter 0.18s, transform 0.14s;
-}
-.login-btn:hover { filter: brightness(1.15); transform: translateY(-1px); }
-.login-btn:active { transform: scale(0.97); }
-
-.login-error {
-    color: #ff6666;
-    font-size: 12px;
-    font-family: Consolas, monospace;
-    display: none;
-    text-shadow: 0 0 6px rgba(255,50,50,0.5);
-}
-
-.login-divider {
-    width: 240px;
-    height: 1px;
-    background: linear-gradient(to right, transparent, rgba(255,60,60,0.4), transparent);
-}
 </style>
 
 <div class="oobe-overlay">
@@ -1870,6 +2235,10 @@ loading desktop elements...
     <div class="login-error" id="loginError">Incorrect password. Please try again.</div>
     <button class="login-btn" onclick="login()">Log in →</button>
 </div>
+<div class="login-power-controls" aria-label="Power controls">
+    <button class="login-power-btn" title="Restart" onclick="startRestart(0)">↻</button>
+    <button class="login-power-btn" title="Shutdown" onclick="startShutdown(0)">⏻</button>
+</div>
 </div>
 
 <div id="desktop" class="desktop">
@@ -1888,18 +2257,15 @@ loading desktop elements...
     <div class="icon" data-app="imageviewer" ondblclick="openApp('imageviewer')"><span class="icon-img">🖼️</span><span class="icon-label">ImageViewer.exe</span></div>
     <div class="icon" data-app="themes" ondblclick="openApp('themes')"><span class="icon-img">🎨</span><span class="icon-label">Themes.exe</span></div>
     <div class="icon" data-app="sandbox" ondblclick="openApp('sandbox')"><span class="icon-img">🐳</span><span class="icon-label">Sandbox.exe</span></div>
-
-    <!-- � NEW APP -->
-    <div class="icon" data-app="atiexi" ondblclick="openApp('atiexi')">
-        <span class="icon-img">🌐</span>
-        <span class="icon-label">AT Iexi.exe</span>
-    </div>
-
-    <!-- �🎮 NEW APP -->
-    <div class="icon" data-app="app-atgamemedia" ondblclick="openApp('app-atgamemedia')">
-        <span class="icon-img">🎮</span>
-        <span class="icon-label">AT Game Media</span>
-    </div>
+    <div class="icon" data-app="winmine" ondblclick="openApp('winmine')"><span class="icon-img">💣</span><span class="icon-label">Minesweeper.exe</span></div>
+    <div class="icon" data-app="sysmon" ondblclick="openApp('sysmon')"><span class="icon-img">📊</span><span class="icon-label">SysMonitor.exe</span></div>
+    <div class="icon" data-app="atamp" ondblclick="openApp('atamp')"><span class="icon-img">📻</span><span class="icon-label">AT-Synth.exe</span></div>
+    <div class="icon" data-app="matrix" ondblclick="openApp('matrix')"><span class="icon-img">📇</span><span class="icon-label">MatrixRain.exe</span></div>
+    <div class="icon" data-app="atiexi" ondblclick="openApp('atiexi')"><span class="icon-img">🌐</span><span class="icon-label">AT Iexi.exe</span></div>
+    <div class="icon" data-app="app-atgamemedia" ondblclick="openApp('app-atgamemedia')"><span class="icon-img">🎮</span><span class="icon-label">AT Game Media</span></div>
+    <div class="icon" data-app="localstr" ondblclick="openApp('localstr')"><span class="icon-img">LS</span><span class="icon-label">LocalSTR.exe</span></div>
+    <div class="icon" data-app="controlpanel" ondblclick="openApp('controlpanel')"><span class="icon-img">⚙️</span><span class="icon-label">ControlPanel.exe</span></div>
+    <div class="icon" data-app="updatelog" ondblclick="openApp('updatelog')"><span class="icon-img">🧾</span><span class="icon-label">UpdateLog.exe</span></div>
 </div>
 
 </div>
@@ -1910,49 +2276,106 @@ loading desktop elements...
 <div id="clock" class="clock"></div>
 </div>
 
-<div class="start-menu" id="startMenu" style="display:none;">
-    <div class="menu-section">
-        <div class="menu-item" data-app="notepad" onclick="openApp('notepad'); closeStartMenu();">
-            <span class="menu-item-icon">📝</span>
-            <span>Notepad</span>
+<div id="startMenu" class="start-menu" style="display:none;">
+    <div class="start-menu-inner">
+        <div class="start-sidebar-banner">
+            <div class="start-sidebar-text">AT BOX OS</div>
         </div>
-        <div class="menu-item" data-app="app-atgamemedia" onclick="openApp('app-atgamemedia'); closeStartMenu();">
-            <span class="menu-item-icon">🎮</span>
-            <span>AT Game Media</span>
-        </div>
-        <div class="menu-item" data-app="cmd" onclick="openApp('cmd'); closeStartMenu();">
-            <span class="menu-item-icon">🖥️</span>
-            <span>Command Prompt</span>
-        </div>
-        <div class="menu-item" data-app="calc" onclick="openApp('calc'); closeStartMenu();">
-            <span class="menu-item-icon">🧮</span>
-            <span>Calculator</span>
-        </div>
-        <div class="menu-item" data-app="paint" onclick="openApp('paint'); closeStartMenu();">
-            <span class="menu-item-icon">🎨</span>
-            <span>Paint</span>
-        </div>
-        <div class="menu-item" data-app="imageviewer" onclick="openApp('imageviewer'); closeStartMenu();">
-            <span class="menu-item-icon">🖼️</span>
-            <span>Image Viewer</span>
-        </div>
-        <div class="menu-item" data-app="themes" onclick="openApp('themes'); closeStartMenu();">
-            <span class="menu-item-icon">🖼️</span>
-            <span>Themes</span>
-        </div>
-        <div class="menu-item" data-app="sandbox" onclick="openApp('sandbox'); closeStartMenu();">
-            <span class="menu-item-icon">🐳</span>
-            <span>Sandbox</span>
-        </div>
-        <div class="menu-item" data-app="atiexi" onclick="openApp('atiexi'); closeStartMenu();">
-            <span class="menu-item-icon">🌐</span>
-            <span>AT Iexi</span>
+
+        <div class="start-programs-feed">
+            <div class="start-program-row" onclick="toggleStartMenu(); openApp('notepad');">
+                <span class="start-row-icon">📝</span>
+                <span class="start-row-label">Notepad</span>
+            </div>
+            <div class="start-program-row" onclick="toggleStartMenu(); openApp('explorer');">
+                <span class="start-row-icon">📁</span>
+                <span class="start-row-label">File Explorer</span>
+            </div>
+            <div class="start-program-row" onclick="toggleStartMenu(); openApp('cmd');">
+                <span class="start-row-icon">💻</span>
+                <span class="start-row-label">Command Prompt</span>
+            </div>
+            <div class="start-program-row" onclick="toggleStartMenu(); openApp('calc');">
+                <span class="start-row-icon">🧮</span>
+                <span class="start-row-label">Calculator</span>
+            </div>
+            <div class="start-program-row" onclick="toggleStartMenu(); openApp('paint');">
+                <span class="start-row-icon">🎨</span>
+                <span class="start-row-label">Paint Brush</span>
+            </div>
+            <div class="start-program-row" onclick="toggleStartMenu(); openApp('imageviewer');">
+                <span class="start-row-icon">🖼️</span>
+                <span class="start-row-label">ImageViewer</span>
+            </div>
+            
+            <div class="start-divider"></div>
+
+            <div class="start-program-row" onclick="toggleStartMenu(); openApp('sandbox');">
+                <span class="start-row-icon">📦</span>
+                <span class="start-row-label">Sandbox Terminal</span>
+            </div>
+            <div class="start-program-row" onclick="toggleStartMenu(); openApp('sysmon');">
+                <span class="start-row-icon">📊</span>
+                <span class="start-row-label">System Monitor</span>
+            </div>
+            <div class="start-program-row" onclick="toggleStartMenu(); openApp('localstr');">
+                <span class="start-row-icon">⚙️</span>
+                <span class="start-row-label">LocalSTR Config</span>
+            </div>
+            <div class="start-program-row" onclick="toggleStartMenu(); openApp('controlpanel');">
+                <span class="start-row-icon">⚙️</span>
+                <span class="start-row-label">Control Panel</span>
+            </div>
+            <div class="start-program-row" onclick="toggleStartMenu(); openApp('updatelog');">
+                <span class="start-row-icon">🧾</span>
+                <span class="start-row-label">Update Log</span>
+            </div>
+            <div class="start-program-row" onclick="toggleStartMenu(); openApp('atiexi');">
+                <span class="start-row-icon">🌐</span>
+                <span class="start-row-label">AT Iexi Browser</span>
+            </div>
+
+            <div class="start-divider"></div>
+
+            <div class="start-program-row" onclick="toggleStartMenu(); openApp('winmine');">
+                <span class="start-row-icon">💣</span>
+                <span class="start-row-label">Minesweeper</span>
+            </div>
+            <div class="start-program-row" onclick="toggleStartMenu(); openApp('matrix');">
+                <span class="start-row-icon">📟</span>
+                <span class="start-row-label">Matrix Screensaver</span>
+            </div>
+            <div class="start-program-row" onclick="toggleStartMenu(); openApp('app-atgamemedia');">
+                <span class="start-row-icon">🎮</span>
+                <span class="start-row-label">Game Media Deck</span>
+            </div>
+            <div class="start-program-row" onclick="toggleStartMenu(); openApp('atamp');">
+                <span class="start-row-icon">🎹</span>
+                <span class="start-row-label">AT-Synth Tracker</span>
+            </div>
+            <div class="start-program-row" onclick="toggleStartMenu(); openApp('pong-window');">
+                <span class="start-row-icon">🏓</span>
+                <span class="start-row-label">Pong Game</span>
+            </div>
+            <div class="start-program-row" onclick="toggleStartMenu(); openApp('skansak-window');">
+                <span class="start-row-icon">🐍</span>
+                <span class="start-row-label">Snake Retro</span>
+            </div>
+            <div class="start-program-row" onclick="toggleStartMenu(); openApp('tetris-window');">
+                <span class="start-row-icon">🧱</span>
+                <span class="start-row-label">Tetris Block</span>
+            </div>
+            <div class="start-program-row" onclick="toggleStartMenu(); openApp('voxelfs-window');">
+                <span class="start-row-icon">💾</span>
+                <span class="start-row-label">VoxelFS Manager</span>
+            </div>
         </div>
     </div>
 
-    <div class="shutdown-options">
-        <button class="shutdown-btn" title="Restart" onclick="startRestart(0)">🔄</button>
-        <button class="shutdown-btn" title="Shutdown" onclick="startShutdown(0)">⏻</button>
+    <div class="start-action-deck">
+        <button class="start-action-btn" title="Settings Manager" onclick="toggleStartMenu(); openApp('themes');">⚙</button>
+        <button class="start-action-btn" title="Restart Boot Mode" onclick="toggleStartMenu(); startRestart(0);">↻</button>
+        <button class="start-action-btn" title="Shutdown Desktop" onclick="toggleStartMenu(); startShutdown(0);">⏻</button>
     </div>
 </div>
 
@@ -2046,6 +2469,8 @@ Not affiliated with any organisation or company.</div>
 <div class="resizer"></div>
 </div>
 
+
+
 <div id="app-atgamemedia" data-app-id="app-atgamemedia" data-template="true" class="window window-template" style="width:700px;height:460px;">
     <div class="titlebar" onmousedown="dragStart(event,this.parentElement)">
         AT Game Media
@@ -2107,9 +2532,17 @@ Not affiliated with any organisation or company.</div>
                         </div>
                         <div style="font-size:10px;color:var(--accent);font-weight:600;letter-spacing:0.5px;">PLAY ▶</div>
                     </div>
+                    <div onclick="atgmNavToGame('voxelfs')" style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:6px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);cursor:pointer;" onmouseover="this.style.background='rgba(255,255,255,0.09)'" onmouseout="this.style.background='rgba(255,255,255,0.04)'">
+                        <div style="width:40px;height:40px;border-radius:6px;background:linear-gradient(135deg,rgba(85,107,47,0.75),rgba(139,90,43,0.5));border:1px solid rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;">VFS</div>
+                        <div style="flex:1;min-width:0;">
+                            <div style="font-size:13px;font-weight:600;color:#fff;">VoxelFS</div>
+                            <div style="font-size:11px;color:#888;margin-top:1px;">Voxel Engine &middot; AT Game Media &middot; 2026</div>
+                        </div>
+                        <div style="font-size:10px;color:var(--accent);font-weight:600;letter-spacing:0.5px;">PLAY &#9654;</div>
+                    </div>
                 </div>
                 <div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06);">
-                    <div style="font-size:10px;color:#555;text-align:center;">3 game(s) installed</div>
+                    <div style="font-size:10px;color:#555;text-align:center;">4 game(s) installed</div>
                 </div>
             </div>
 
@@ -2182,6 +2615,27 @@ Not affiliated with any organisation or company.</div>
                 </div>
             </div>
 
+            <!-- VOXELFS PAGE -->
+            <div class="atgm-section" id="atgm-section-voxelfs" style="display:none;flex-direction:column;height:100%;overflow:hidden;">
+                <div style="flex:0 0 120px;background:linear-gradient(135deg,rgba(255,255,255,0.06) 0%,rgba(0,0,0,0) 60%),linear-gradient(180deg,rgba(85,107,47,0.35),transparent);border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;padding:0 20px;gap:16px;">
+                    <div style="width:68px;height:68px;border-radius:10px;background:linear-gradient(135deg,#556B2F,#8B5A2B);border:1px solid rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:#fff;box-shadow:0 4px 16px rgba(0,0,0,0.4);flex-shrink:0;">VFS</div>
+                    <div>
+                        <div style="font-size:22px;font-weight:700;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,0.6);">VoxelFS</div>
+                        <div style="font-size:11px;color:#aaa;margin-top:2px;">AT Game Media &middot; 2026 &middot; Voxel Engine</div>
+                        <div style="display:flex;gap:6px;margin-top:6px;">
+                            <span style="font-size:9px;padding:2px 7px;border-radius:10px;background:var(--accent-soft);border:1px solid var(--accent-border);color:var(--accent);">ENGINE</span>
+                            <span style="font-size:9px;padding:2px 7px;border-radius:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#aaa;">3D</span>
+                        </div>
+                    </div>
+                </div>
+                <div style="flex:1;padding:16px 20px;overflow-y:auto;">
+                    <div style="font-size:12px;color:#aaa;line-height:1.7;margin-bottom:16px;">A hardware-accelerated voxel world with instanced rendering, terrain generation, collision, jumping, block breaking, and block placement. Use WASD to move, Space to jump, number keys to pick blocks, then click into the game window to lock controls.</div>
+                    <div style="display:flex;gap:10px;align-items:center;">
+                        <button class="atgm-play-btn" onclick="atgmLaunchVoxelFS(this)">&#9654;&nbsp; Launch VoxelFS</button>
+                        <button onclick="atgmNavToGame('library')" style="padding:8px 16px;font-size:12px;font-family:inherit;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.14);color:#aaa;border-radius:4px;cursor:pointer;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#aaa'">&larr; Library</button>
+                    </div>
+                </div>
+            </div>
             <!-- ABOUT PAGE -->
             <div class="atgm-section" id="atgm-section-about" style="display:none;flex-direction:column;padding:20px;overflow-y:auto;">
                 <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:14px;">About AT Game Media</div>
@@ -2189,7 +2643,7 @@ Not affiliated with any organisation or company.</div>
                     <div><span style="color:#888;min-width:100px;display:inline-block;">Version</span><span style="color:#ccc;">Prerelease 4 u8.810</span></div>
                     <div><span style="color:#888;min-width:100px;display:inline-block;">Developer</span><span style="color:#ccc;">AT Corporation</span></div>
                     <div><span style="color:#888;min-width:100px;display:inline-block;">Platform</span><span style="color:#ccc;">ATBox 1.0.1</span></div>
-                    <div><span style="color:#888;min-width:100px;display:inline-block;">Games</span><span style="color:#ccc;">3 installed</span></div>
+                    <div><span style="color:#888;min-width:100px;display:inline-block;">Games</span><span style="color:#ccc;">4 installed</span></div>
                 </div>
                 <div style="margin-top:14px;padding:10px 12px;border-radius:5px;border:1px solid rgba(240,160,0,0.3);background:rgba(240,160,0,0.06);">
                     <div style="font-size:11px;color:#f0a000;">⚠ You are using a prerelease version. Bugs may be present.</div>
@@ -2200,6 +2654,629 @@ Not affiliated with any organisation or company.</div>
     </div>
     <div class="resizer"></div>
 </div>
+
+<!-- VOXELFS WINDOW TEMPLATE -->
+<div id="voxelfs-window" data-app-id="voxelfs-window" data-template="true" class="window window-template" style="width:960px;height:640px;">
+    <div class="titlebar" onmousedown="dragStart(event,this.parentElement)">
+        VoxelFS - AT Game Media
+        <div class="win-btns">
+            <div class="btn" onclick="minimize(this)">_</div>
+            <div class="btn" onclick="maximize(this)">â–¡</div>
+            <div class="btn" onclick="voxelfsClose(this)">X</div>
+        </div>
+    </div>
+    <div class="content" style="padding:0;background:#000;position:relative;overflow:hidden;">
+        <iframe data-role="voxelfs-frame" title="VoxelFS" sandbox="allow-scripts allow-pointer-lock allow-same-origin allow-downloads" style="display:block;width:100%;height:100%;border:0;background:#000;"></iframe>
+    </div>
+    <div class="resizer"></div>
+</div>
+
+<script type="text/plain" id="voxelfs-srcdoc"><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoxelFS</title>
+    <style>
+        body, html { margin: 0; padding: 0; overflow: hidden; width: 100%; height: 100%; font-family: 'Segoe UI', sans-serif; user-select: none; }
+        canvas { display: block; }
+        #crosshair {
+            position: absolute; top: 50%; left: 50%;
+            width: 10px; height: 10px; transform: translate(-50%, -50%);
+            color: white; font-weight: bold; font-size: 24px; pointer-events: none; text-shadow: 1px 1px 2px black;
+        }
+        #hotbar {
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            display: flex; background: rgba(0, 0, 0, 0.6); padding: 6px; border: 4px solid #333; border-radius: 4px; pointer-events: none;
+        }
+        #world-tools {
+            position: absolute; top: 14px; left: 14px; z-index: 9;
+            display: flex; gap: 8px; align-items: center;
+        }
+        .slot { width: 50px; height: 50px; margin: 0 4px; border: 4px solid #555; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 12px; position: relative; }
+        .slot.active { border-color: #fff; background-color: rgba(255,255,255,0.2); }
+        .tool-btn { background: rgba(20,20,20,0.82); color: white; border: 2px solid #555; padding: 8px 12px; font-size: 12px; cursor: pointer; font-weight: bold; border-radius: 4px; box-shadow: inset 0 -3px 0 rgba(0,0,0,0.45); }
+        .tool-btn:hover { background: rgba(45,45,45,0.92); border-color: #888; }
+        .menu-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 14px; }
+        .menu-actions .tool-btn { min-width: 120px; box-sizing: border-box; }
+        #perf-warning { display: none; margin: 12px 0 0; padding: 9px 11px; max-width: 460px; border: 2px solid #d08a00; background: rgba(208, 138, 0, 0.16); color: #ffd37a; font-size: 12px; line-height: 1.35; text-align: left; }
+        #menu-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
+        .menu-box { background: #222; border: 4px solid #444; padding: 30px; text-align: center; color: white; border-radius: 8px; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+        .btn { background: #555; color: white; border: 2px solid #777; padding: 12px 24px; font-size: 18px; cursor: pointer; font-weight: bold; margin-top: 15px; width: 200px; box-shadow: inset 0 -4px 0 #333; }
+        .btn:hover { background: #666; border-color: #999; }
+    </style>
+</head>
+<body>
+
+    <div id="crosshair">+</div>
+    
+    <div id="hotbar">
+        <div class="slot active" style="background-color: #556B2F;">Grass</div>
+        <div class="slot" style="background-color: #8B5A2B;">Dirt</div>
+        <div class="slot" style="background-color: #808080;">Stone</div>
+        <div class="slot" style="background-color: #CD853F;">Wood</div>
+    </div>
+
+    <div id="world-tools">
+        <button class="tool-btn" id="save-world-btn">Save World</button>
+        <label class="tool-btn" for="import-world-input">Import World</label>
+        <input id="import-world-input" type="file" accept="application/json" style="display:none;">
+    </div>
+
+    <div id="menu-overlay">
+        <div class="menu-box">
+            <h1 style="margin-top:0;">VoxelFS</h1>
+            <p style="color: #aaa;">GPU hardware-accelerated voxel engine active.</p>
+            <p style="font-size: 14px; color: #888;">WASD = Move | Space = Jump<br>Left Click = Break | Right Click = Place<br>1-4 = Select Block | T = Release Mouse</p>
+            <div id="perf-warning">PerfWarning: ! Warning: You are using transparency mode, this will cause heavy performance drop, make sure to disable it before playing!</div>
+            <div class="menu-actions">
+                <button class="tool-btn" id="menu-save-world-btn">Save World</button>
+                <label class="tool-btn" for="import-world-input">Import World</label>
+            </div>
+            <button class="btn" id="resume-btn">Start Game</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"><\/script>
+
+    <script>
+        // --- 1. SETUP ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87CEEB);
+        scene.fog = new THREE.FogExp2(0x87CEEB, 0.015);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: false }); // Fast scaling
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+        const sunLight = new THREE.DirectionalLight(0xffffff, 0.5);
+        sunLight.position.set(20, 40, 20);
+        scene.add(sunLight);
+
+        // --- 2. PLAYER PHYSICS ---
+        const player = {
+            height: 1.8, radius: 0.35,
+            velocity: new THREE.Vector3(), onGround: false,
+            speed: 7.0, jumpForce: 8.5, gravity: 24.0
+        };
+        camera.position.set(0, 15, 0);
+
+        // --- 3. CONTROLS ---
+        const controls = new THREE.PointerLockControls(camera, document.body);
+        const menuOverlay = document.getElementById('menu-overlay');
+        const perfWarning = document.getElementById('perf-warning');
+        function isTransparencyEnabled() {
+            try {
+                const parentStorage = window.parent && window.parent !== window ? window.parent.localStorage : null;
+                const value = (parentStorage || window.localStorage).getItem('atbox_transparency');
+                return value !== 'off';
+            } catch (error) {
+                return window.localStorage.getItem('atbox_transparency') !== 'off';
+            }
+        }
+        function updatePerfWarning() {
+            if (perfWarning) {
+                perfWarning.style.display = isTransparencyEnabled() ? 'block' : 'none';
+            }
+        }
+        updatePerfWarning();
+        document.getElementById('resume-btn').addEventListener('click', () => controls.lock());
+        controls.addEventListener('lock', () => menuOverlay.style.display = 'none');
+        controls.addEventListener('unlock', () => {
+            updatePerfWarning();
+            menuOverlay.style.display = 'flex';
+        });
+
+        const keys = { w: false, a: false, s: false, d: false, space: false };
+        document.addEventListener('keydown', (e) => {
+            if (e.key.toLowerCase() === 't' && controls.isLocked) {
+                controls.unlock();
+                return;
+            }
+            if (e.key === ' ') keys.space = true;
+            if (keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = true;
+            if (['1','2','3','4'].includes(e.key)) setActiveSlot(parseInt(e.key) - 1);
+        });
+        document.addEventListener('keyup', (e) => {
+            if (e.key === ' ') keys.space = false;
+            if (keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = false;
+        });
+
+        let activeBlockIndex = 0;
+        const slots = document.querySelectorAll('.slot');
+        function setActiveSlot(index) {
+            slots[activeBlockIndex].classList.remove('active');
+            activeBlockIndex = index;
+            slots[activeBlockIndex].classList.add('active');
+        }
+
+        // --- 4. HARDWARE ACCELERATED STORAGE ---
+        const worldRadius = 30; 
+        const maxBlocks = (worldRadius * 2 + 1) * (worldRadius * 2 + 1) * 4 + 2000; // Cache limit buffer
+        
+        const geometry = new THREE.BoxGeometry(1, 1, 1);
+        const materials = [
+            [ // Grass
+                new THREE.MeshLambertMaterial({ color: 0x8B5A2B }), new THREE.MeshLambertMaterial({ color: 0x8B5A2B }),
+                new THREE.MeshLambertMaterial({ color: 0x556B2F }), new THREE.MeshLambertMaterial({ color: 0x8B5A2B }),
+                new THREE.MeshLambertMaterial({ color: 0x8B5A2B }), new THREE.MeshLambertMaterial({ color: 0x8B5A2B })
+            ],
+            new THREE.MeshLambertMaterial({ color: 0x8B5A2B }), // Dirt
+            new THREE.MeshLambertMaterial({ color: 0x808080 }), // Stone
+            new THREE.MeshLambertMaterial({ color: 0xCD853F })  // Wood
+        ];
+
+        // 4 separate Instanced Mesh arrays (one per block material slot)
+        const instancedMeshes = [];
+        const instanceCounts = [0, 0, 0, 0];
+        
+        // Maps Instance IDs back to 3D Coordinates
+        // Format: Key = Spatial Integer Hash, Value = { type, index }
+        const blockDataMap = new Map(); 
+        const editLog = [];
+        const worldStartedAt = Date.now();
+        let editSequence = 0;
+
+        function getSpatialHash(x, y, z) {
+            return ((x & 0x3FF) << 20) | ((y & 0x3FF) << 10) | (z & 0x3FF);
+        }
+
+        // Instantiate the hardware buffers
+        for (let i = 0; i < 4; i++) {
+            const mesh = new THREE.InstancedMesh(geometry, materials[i], maxBlocks);
+            mesh.count = 0;
+            scene.add(mesh);
+            instancedMeshes.push(mesh);
+        }
+
+        function createBlockData(x, y, z, type) {
+            const hash = getSpatialHash(x, y, z);
+            if (blockDataMap.has(hash)) return false;
+
+            const mesh = instancedMeshes[type];
+            const idx = instanceCounts[type];
+            if (!mesh || idx >= maxBlocks) return false;
+
+            const dummy = new THREE.Object3D();
+            dummy.position.set(x, y, z);
+            dummy.updateMatrix();
+            mesh.setMatrixAt(idx, dummy.matrix);
+
+            blockDataMap.set(hash, { type: type, index: idx, x: x, y: y, z: z });
+            instanceCounts[type]++;
+            mesh.count = instanceCounts[type];
+            mesh.instanceMatrix.needsUpdate = true;
+            return true;
+        }
+
+        function destroyBlockData(x, y, z) {
+            const hash = getSpatialHash(x, y, z);
+            if (!blockDataMap.has(hash)) return null;
+
+            const target = blockDataMap.get(hash);
+            const removed = { x: target.x, y: target.y, z: target.z, type: target.type };
+            const type = target.type;
+            const idx = target.index;
+            const mesh = instancedMeshes[type];
+            
+            const lastIdx = instanceCounts[type] - 1;
+            
+            if (idx !== lastIdx) {
+                // Swap current instance matrix buffer space with the last instance to preserve indexes safely
+                const lastMatrix = new THREE.Matrix4();
+                mesh.getMatrixAt(lastIdx, lastMatrix);
+                mesh.setMatrixAt(idx, lastMatrix);
+
+                // Re-map the structural data pointers of the moved block
+                const dummyPos = new THREE.Vector3();
+                dummyPos.setFromMatrixPosition(lastMatrix);
+                const movedHash = getSpatialHash(Math.round(dummyPos.x), Math.round(dummyPos.y), Math.round(dummyPos.z));
+                if (blockDataMap.has(movedHash)) {
+                    blockDataMap.get(movedHash).index = idx;
+                }
+            }
+
+            instanceCounts[type]--;
+            mesh.count = instanceCounts[type];
+            mesh.instanceMatrix.needsUpdate = true;
+            blockDataMap.delete(hash);
+            return removed;
+        }
+
+        // Generate procedural map data
+        for (let x = -worldRadius; x <= worldRadius; x++) {
+            for (let z = -worldRadius; z <= worldRadius; z++) {
+                const height = Math.floor(Math.sin(x * 0.08) * 2.5 + Math.cos(z * 0.08) * 2.5);
+                createBlockData(x, height, z, 0);       // Grass
+                createBlockData(x, height - 1, z, 1);   // Dirt
+                createBlockData(x, height - 2, z, 2);   // Stone
+            }
+        }
+
+        function recordWorldEdit(action, x, y, z, type) {
+            editSequence++;
+            editLog.push([
+                editSequence,
+                action === "place" ? 1 : 0,
+                x,
+                y,
+                z,
+                type,
+                Date.now() - worldStartedAt
+            ]);
+        }
+
+        function getWorldStats() {
+            const bounds = {
+                minX: Infinity, maxX: -Infinity,
+                minY: Infinity, maxY: -Infinity,
+                minZ: Infinity, maxZ: -Infinity
+            };
+            const countsByType = [0, 0, 0, 0];
+            const blocksByType = [[], [], [], []];
+
+            for (const block of blockDataMap.values()) {
+                countsByType[block.type]++;
+                blocksByType[block.type].push(block.x, block.y, block.z);
+                if (block.x < bounds.minX) bounds.minX = block.x;
+                if (block.x > bounds.maxX) bounds.maxX = block.x;
+                if (block.y < bounds.minY) bounds.minY = block.y;
+                if (block.y > bounds.maxY) bounds.maxY = block.y;
+                if (block.z < bounds.minZ) bounds.minZ = block.z;
+                if (block.z > bounds.maxZ) bounds.maxZ = block.z;
+            }
+
+            if (!blockDataMap.size) {
+                bounds.minX = bounds.maxX = bounds.minY = bounds.maxY = bounds.minZ = bounds.maxZ = 0;
+            }
+
+            return { bounds, countsByType, blocksByType };
+        }
+
+        function getEditStats() {
+            let breaks = 0;
+            let placements = 0;
+            const touched = new Set();
+
+            for (const entry of editLog) {
+                if (entry[1] === 1) placements++;
+                else breaks++;
+                touched.add(entry[2] + "," + entry[3] + "," + entry[4]);
+            }
+
+            return {
+                total: editLog.length,
+                breaks,
+                placements,
+                netBlockDelta: placements - breaks,
+                uniqueTouchedCoordinates: touched.size
+            };
+        }
+
+        function serializeWorld() {
+            const stats = getWorldStats();
+            const editStats = getEditStats();
+
+            return {
+                app: "VoxelFS",
+                saveFormat: "VoxelFSWorld",
+                version: 2,
+                savedAt: new Date().toISOString(),
+                optimized: true,
+                compression: "coordinate-triplets-by-block-type",
+                blockTypes: {
+                    0: "Grass",
+                    1: "Dirt",
+                    2: "Stone",
+                    3: "Wood"
+                },
+                worldSettings: {
+                    worldRadius,
+                    maxBlocks,
+                    terrain: "height = floor(sin(x * 0.08) * 2.5 + cos(z * 0.08) * 2.5)",
+                    coordinateStride: 3
+                },
+                summary: {
+                    totalBlocks: blockDataMap.size,
+                    countsByType: stats.countsByType,
+                    bounds: stats.bounds,
+                    edits: editStats
+                },
+                finalWorld: {
+                    storage: "blocksByType[type] = flat [x,y,z,x,y,z...]",
+                    blocksByType: stats.blocksByType
+                },
+                editJournal: {
+                    storage: "entries = [sequence, actionCode, x, y, z, blockType, elapsedMs]",
+                    actionCodes: {
+                        0: "break",
+                        1: "place"
+                    },
+                    entries: editLog
+                }
+            };
+        }
+
+        function downloadJson(filename, json) {
+            if (window.parent && window.parent !== window) {
+                window.parent.postMessage({
+                    type: "voxelfs-download-world",
+                    filename,
+                    json
+                }, "*");
+                return;
+            }
+
+            const blob = new Blob([json], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(url);
+        }
+
+        function downloadWorldSave() {
+            const data = serializeWorld();
+            const json = JSON.stringify(data, null, 2);
+            const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+            downloadJson(`voxelfs-world-${stamp}.json`, json);
+        }
+
+        function clearWorld() {
+            blockDataMap.clear();
+            for (let i = 0; i < instancedMeshes.length; i++) {
+                instanceCounts[i] = 0;
+                instancedMeshes[i].count = 0;
+                instancedMeshes[i].instanceMatrix.needsUpdate = true;
+            }
+        }
+
+        function getSavedBlocks(data) {
+            if (data && data.finalWorld && Array.isArray(data.finalWorld.blocksByType)) {
+                const blocks = [];
+                data.finalWorld.blocksByType.forEach((coords, type) => {
+                    if (!Array.isArray(coords)) return;
+                    for (let i = 0; i + 2 < coords.length; i += 3) {
+                        blocks.push({ x: coords[i], y: coords[i + 1], z: coords[i + 2], type });
+                    }
+                });
+                return blocks;
+            }
+
+            if (data && Array.isArray(data.blocks)) {
+                return data.blocks;
+            }
+
+            return null;
+        }
+
+        function loadWorldSave(data) {
+            const savedBlocks = getSavedBlocks(data);
+            if (!savedBlocks) {
+                throw new Error("Invalid VoxelFS save file.");
+            }
+
+            clearWorld();
+            for (const block of savedBlocks) {
+                const x = Number(block.x);
+                const y = Number(block.y);
+                const z = Number(block.z);
+                const type = Number(block.type);
+                if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) continue;
+                if (!Number.isInteger(type) || type < 0 || type >= instancedMeshes.length) continue;
+                createBlockData(Math.round(x), Math.round(y), Math.round(z), type);
+            }
+
+            editLog.length = 0;
+            if (data && data.editJournal && Array.isArray(data.editJournal.entries)) {
+                for (const entry of data.editJournal.entries) {
+                    if (Array.isArray(entry) && entry.length >= 7) editLog.push(entry.slice(0, 7));
+                }
+                editSequence = editLog.reduce((max, entry) => Math.max(max, Number(entry[0]) || 0), 0);
+            } else {
+                editSequence = 0;
+            }
+
+            camera.position.set(0, 15, 0);
+            player.velocity.set(0, 0, 0);
+        }
+
+        document.getElementById("save-world-btn").addEventListener("click", downloadWorldSave);
+        document.getElementById("menu-save-world-btn").addEventListener("click", downloadWorldSave);
+        document.getElementById("import-world-input").addEventListener("change", async (event) => {
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+
+            try {
+                const text = await file.text();
+                loadWorldSave(JSON.parse(text));
+            } catch (error) {
+                alert(error.message || "Could not import that VoxelFS save file.");
+            } finally {
+                event.target.value = "";
+            }
+        });
+
+        // --- 5. PHYSICS ENGINE ---
+        function checkCollision(pos) {
+            const px = pos.x, py = pos.y, pz = pos.z;
+            const playerMinX = px - player.radius, playerMaxX = px + player.radius;
+            const playerMinZ = pz - player.radius, playerMaxZ = pz + player.radius;
+            const playerMinY = py - player.height, playerMaxY = py;
+
+            const startX = Math.floor(px - 1), endX = Math.ceil(px + 1);
+            const startY = Math.floor(py - 2), endY = Math.ceil(py + 1);
+            const startZ = Math.floor(pz - 1), endZ = Math.ceil(pz + 1);
+
+            for (let x = startX; x <= endX; x++) {
+                for (let y = startY; y <= endY; y++) {
+                    for (let z = startZ; z <= endZ; z++) {
+                        if (blockDataMap.has(getSpatialHash(x, y, z))) {
+                            if (playerMaxX > x - 0.5 && playerMinX < x + 0.5 &&
+                                playerMaxY > y - 0.5 && playerMinY < y + 0.5 &&
+                                playerMaxZ > z - 0.5 && playerMinZ < z + 0.5) {
+                                return { hit: true, blockY: y };
+                            }
+                        }
+                    }
+                }
+            }
+            return { hit: false };
+        }
+
+        // --- 6. RAYCAST TARGETING (BREAK & PLACE) ---
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2(0, 0);
+
+        window.addEventListener('mousedown', (e) => {
+            if (!controls.isLocked) return;
+            raycaster.setFromCamera(mouse, camera);
+            
+            // Intersect directly against active batch buffers
+            const intersects = raycaster.intersectObjects(instancedMeshes);
+
+            if (intersects.length > 0 && intersects[0].distance < 6) {
+                const hit = intersects[0];
+                const mesh = hit.object;
+                const instanceId = hit.instanceId;
+
+                // Derive absolute coordinate positions from target matrix index
+                const matrix = new THREE.Matrix4();
+                mesh.getMatrixAt(instanceId, matrix);
+                const position = new THREE.Vector3();
+                position.setFromMatrixPosition(matrix);
+
+                const bx = Math.round(position.x);
+                const by = Math.round(position.y);
+                const bz = Math.round(position.z);
+
+                if (e.button === 0) { // Mine
+                    const removed = destroyBlockData(bx, by, bz);
+                    if (removed) {
+                        recordWorldEdit("break", removed.x, removed.y, removed.z, removed.type);
+                    }
+                } else if (e.button === 2) { // Place
+                    const normal = hit.face.normal;
+                    const px = bx + normal.x;
+                    const py = by + normal.y;
+                    const pz = bz + normal.z;
+
+                    if (!blockDataMap.has(getSpatialHash(px, py, pz))) {
+                        const placed = createBlockData(px, py, pz, activeBlockIndex);
+                        if (placed) {
+                            recordWorldEdit("place", px, py, pz, activeBlockIndex);
+                        }
+                    }
+                }
+            }
+        });
+        window.addEventListener('contextmenu', e => e.preventDefault());
+
+        // --- 7. CORE TICK PIPELINE ---
+        let prevTime = performance.now();
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (controls.isLocked) {
+                const time = performance.now();
+                const delta = Math.min((time - prevTime) / 1000, 0.1);
+                prevTime = time;
+
+                player.velocity.y -= player.gravity * delta;
+                let targetPos = camera.position.clone();
+                targetPos.y += player.velocity.y * delta;
+
+                let vCollide = checkCollision(targetPos);
+                if (vCollide.hit) {
+                    if (player.velocity.y < 0) {
+                        player.onGround = true;
+                        camera.position.y = vCollide.blockY + 0.5 + player.height;
+                    }
+                    player.velocity.y = 0;
+                } else {
+                    player.onGround = false;
+                    camera.position.y = targetPos.y;
+                }
+
+                if (keys.space && player.onGround) {
+                    player.velocity.y = player.jumpForce;
+                    player.onGround = false;
+                }
+
+                const moveVector = new THREE.Vector3();
+                const forward = new THREE.Vector3();
+                const side = new THREE.Vector3();
+
+                camera.getWorldDirection(forward);
+                forward.y = 0; forward.normalize();
+                side.crossVectors(camera.up, forward).normalize();
+
+                if (keys.w) moveVector.add(forward);
+                if (keys.s) moveVector.sub(forward);
+                if (keys.d) moveVector.sub(side);
+                if (keys.a) moveVector.add(side);
+                moveVector.normalize();
+
+                if (moveVector.lengthSq() > 0) {
+                    let testPos = camera.position.clone();
+                    testPos.x += moveVector.x * player.speed * delta;
+                    if (!checkCollision(testPos).hit) camera.position.x = testPos.x;
+
+                    testPos = camera.position.clone();
+                    testPos.z += moveVector.z * player.speed * delta;
+                    if (!checkCollision(testPos).hit) camera.position.z = testPos.z;
+                }
+
+                if (camera.position.y < -30) {
+                    camera.position.set(0, 15, 0);
+                    player.velocity.set(0,0,0);
+                }
+            } else {
+                prevTime = performance.now();
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    <\/script>
+</body>
+</html>
+</script>
 
 <!-- TETRIS WINDOW TEMPLATE -->
 <div id="tetris-window" data-app-id="tetris-window" data-template="true" class="window window-template" style="width:420px;height:560px;">
@@ -2318,6 +3395,72 @@ Notepad
 <div class="resizer"></div>
 </div>
 
+<div id="winmine" data-app-id="winmine" data-template="true" class="window window-template">
+    <div class="titlebar" onmousedown="dragStart(event,this.parentElement)">
+        <span>💣 Winmine</span>
+        <div class="win-btns">
+            <div class="btn" onclick="minimize(this)">_</div>
+            <div class="btn" onclick="maximize(this)">□</div>
+            <div class="btn" onclick="closeWin(this)">X</div>
+        </div>
+    </div>
+    <div class="content" style="display:flex; flex-direction:column; align-items:center; gap:8px; background:#000;">
+        <div class="mine-count" style="color:var(--accent); font-family:monospace; font-size:12px; margin-top:4px;">Mines: 10</div>
+        <canvas class="mine-canvas" width="180" height="180" style="border:1px solid var(--accent-border); cursor:pointer;"></canvas>
+        <button class="mine-reset" style="background:transparent; border:1px solid var(--accent); color:#fff; font-family:monospace; font-size:11px; padding:2px 8px; cursor:pointer;">[RESET GAME]</button>
+    </div>
+    <div class="resizer"></div>
+</div>
+
+<div id="sysmon" data-app-id="sysmon" data-template="true" class="window window-template">
+    <div class="titlebar" onmousedown="dragStart(event,this.parentElement)">
+        <span>📊 Task Manager</span>
+        <div class="win-btns">
+            <div class="btn" onclick="minimize(this)">_</div>
+            <div class="btn" onclick="maximize(this)">□</div>
+            <div class="btn" onclick="closeWin(this)">X</div>
+        </div>
+    </div>
+    <div class="content" style="display:flex; flex-direction:column; gap:8px; padding:8px; background:#050505;">
+        <div style="font-family:monospace; font-size:11px; color:#aaa;">CPU Usage: <span class="cpu-text" style="color:var(--accent);">0%</span></div>
+        <canvas class="cpu-chart" style="width:100%; height:60px; border:1px solid var(--accent-border); background:#000;"></canvas>
+        <div style="font-family:monospace; font-size:11px; color:#aaa; margin-top:4px;">RAM Allocation: <span class="ram-text" style="color:var(--accent);">0MB</span></div>
+        <canvas class="ram-chart" style="width:100%; height:60px; border:1px solid var(--accent-border); background:#000;"></canvas>
+    </div>
+    <div class="resizer"></div>
+</div>
+
+<div id="atamp" data-app-id="atamp" data-template="true" class="window window-template">
+    <div class="titlebar" onmousedown="dragStart(event,this.parentElement)">
+        <span>📻 ATamp Media Player</span>
+        <div class="win-btns">
+            <div class="btn" onclick="minimize(this)">_</div>
+            <div class="btn" onclick="maximize(this)">□</div>
+            <div class="btn" onclick="closeWin(this)">X</div>
+        </div>
+    </div>
+    <div class="content" style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; background:#000;">
+        <canvas class="audio-canvas" width="260" height="80" style="border:1px solid rgba(255,0,0,0.2); background:#020202;"></canvas>
+        <button class="audio-toggle" style="background:var(--accent-soft); border:1px solid var(--accent-border); color:#fff; font-family:monospace; font-size:11px; padding:6px 12px; cursor:pointer; width:80%;">GENERATE SYNTH WAVE</button>
+    </div>
+    <div class="resizer"></div>
+</div>
+
+<div id="matrix" data-app-id="matrix" data-template="true" class="window window-template">
+    <div class="titlebar" onmousedown="dragStart(event,this.parentElement)">
+        <span>📟 Matrix Emulator</span>
+        <div class="win-btns">
+            <div class="btn" onclick="minimize(this)">_</div>
+            <div class="btn" onclick="maximize(this)">□</div>
+            <div class="btn" onclick="closeWin(this)">X</div>
+        </div>
+    </div>
+    <div class="content" style="padding:0; background:#000; position:relative; width:100%; height:100%;">
+        <canvas class="matrix-canvas" style="display:block; width:100%; height:100%; background:black;" width="400" height="300"></canvas>
+    </div>
+    <div class="resizer"></div>
+</div>
+
 <div id="cmd" data-app-id="cmd" data-template="true" class="window window-template">
 <div class="titlebar" onmousedown="dragStart(event,this.parentElement)">
 CMD
@@ -2335,7 +3478,7 @@ CMD
 <div class="resizer"></div>
 </div>
 
-<div id="calc" data-app-id="calc" data-template="true" class="window window-template">
+<div id="calc" data-app-id="calc" data-template="true" class="window window-template" style="width:280px;height:380px;">
 <div class="titlebar" onmousedown="dragStart(event,this.parentElement)">
 Calculator
 <div class="win-btns">
@@ -2344,12 +3487,130 @@ Calculator
 <div class="btn" onclick="closeWin(this)">X</div>
 </div>
 </div>
-<div class="content">
-<input class="calc-input" data-role="calc-input" type="text">
-<button onclick="calculate(this)">=</button>
+<div class="content" style="padding:4px;display:flex;flex-direction:column;gap:4px;background:#111;overflow:hidden;">
+    <!-- Mode tabs -->
+    <div style="display:flex;gap:2px;border-bottom:1px solid #333;padding-bottom:4px;">
+        <div class="calc-tab active" data-calc-mode="calc" onclick="calcSwitchMode(this,'calc')">Calc</div>
+        <div class="calc-tab" data-calc-mode="measure" onclick="calcSwitchMode(this,'measure')">Measure</div>
+    </div>
+    <!-- Display -->
+    <input class="calc-display" data-role="calc-display" type="text" readonly value="0">
+    <!-- Calculator buttons -->
+    <div class="calc-buttons" data-role="calc-buttons">
+        <div class="calc-row">
+            <button class="calc-btn calc-fn" onclick="calcClear()">C</button>
+            <button class="calc-btn calc-fn" onclick="calcNegate()">±</button>
+            <button class="calc-btn calc-fn" onclick="calcPercent()">%</button>
+            <button class="calc-btn calc-op" onclick="calcOp('/')">÷</button>
+        </div>
+        <div class="calc-row">
+            <button class="calc-btn calc-num" onclick="calcDigit('7')">7</button>
+            <button class="calc-btn calc-num" onclick="calcDigit('8')">8</button>
+            <button class="calc-btn calc-num" onclick="calcDigit('9')">9</button>
+            <button class="calc-btn calc-op" onclick="calcOp('*')">×</button>
+        </div>
+        <div class="calc-row">
+            <button class="calc-btn calc-num" onclick="calcDigit('4')">4</button>
+            <button class="calc-btn calc-num" onclick="calcDigit('5')">5</button>
+            <button class="calc-btn calc-num" onclick="calcDigit('6')">6</button>
+            <button class="calc-btn calc-op" onclick="calcOp('-')">−</button>
+        </div>
+        <div class="calc-row">
+            <button class="calc-btn calc-num" onclick="calcDigit('1')">1</button>
+            <button class="calc-btn calc-num" onclick="calcDigit('2')">2</button>
+            <button class="calc-btn calc-num" onclick="calcDigit('3')">3</button>
+            <button class="calc-btn calc-op" onclick="calcOp('+')">+</button>
+        </div>
+        <div class="calc-row">
+            <button class="calc-btn calc-num" style="flex:2;" onclick="calcDigit('0')">0</button>
+            <button class="calc-btn calc-num" onclick="calcDigit('.')">.</button>
+            <button class="calc-btn calc-eq" onclick="calcEquals()">=</button>
+        </div>
+    </div>
+    <!-- Measurement conversion -->
+    <div class="calc-measure" data-role="calc-measure" style="display:none;flex:1;flex-direction:column;gap:6px;padding:4px;">
+        <div style="display:flex;gap:4px;">
+            <select data-role="calc-measure-type" style="flex:1;background:#1a1a1a;border:1px solid #333;color:#ccc;padding:4px;border-radius:3px;font-size:11px;" onchange="calcMeasureUpdate()">
+                <option value="length">Length</option>
+                <option value="weight">Weight</option>
+                <option value="temperature">Temperature</option>
+            </select>
+        </div>
+        <div style="display:flex;gap:4px;">
+            <input type="number" data-role="calc-measure-from" style="flex:1;background:#1a1a1a;border:1px solid #333;color:#ccc;padding:4px;border-radius:3px;font-size:12px;" value="1" oninput="calcMeasureUpdate()">
+            <select data-role="calc-measure-from-unit" style="background:#1a1a1a;border:1px solid #333;color:#ccc;padding:4px;border-radius:3px;font-size:11px;" onchange="calcMeasureUpdate()"></select>
+        </div>
+        <div style="text-align:center;font-size:16px;color:#666;">↓</div>
+        <div style="display:flex;gap:4px;">
+            <input type="text" data-role="calc-measure-to" readonly style="flex:1;background:#0a0a0a;border:1px solid #333;color:#fff;padding:4px;border-radius:3px;font-size:12px;">
+            <select data-role="calc-measure-to-unit" style="background:#1a1a1a;border:1px solid #333;color:#ccc;padding:4px;border-radius:3px;font-size:11px;" onchange="calcMeasureUpdate()"></select>
+        </div>
+    </div>
 </div>
 <div class="resizer"></div>
 </div>
+
+<style>
+.calc-tab {
+    padding: 4px 14px;
+    font-size: 11px;
+    color: #888;
+    cursor: pointer;
+    border-radius: 3px 3px 0 0;
+    user-select: none;
+    transition: background 0.12s, color 0.12s;
+}
+.calc-tab:hover { color: #ddd; }
+.calc-tab.active { background: rgba(255,255,255,0.08); color: #fff; }
+.calc-display {
+    width: 100%;
+    box-sizing: border-box;
+    background: #0a0a0a;
+    border: 1px solid #333;
+    color: #fff;
+    font-size: 22px;
+    font-weight: 600;
+    text-align: right;
+    padding: 8px 10px;
+    font-family: monospace;
+    border-radius: 3px;
+    outline: none;
+}
+.calc-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+.calc-row {
+    display: flex;
+    gap: 3px;
+}
+.calc-btn {
+    flex: 1;
+    padding: 10px 0;
+    font-size: 14px;
+    font-weight: 600;
+    border: 1px solid #333;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: inherit;
+    text-align: center;
+    transition: background 0.1s;
+    user-select: none;
+}
+.calc-num { background: #1a1a1a; color: #ddd; }
+.calc-num:hover { background: #2a2a2a; }
+.calc-num:active { background: #3a3a3a; }
+.calc-op { background: #222; color: var(--accent); }
+.calc-op:hover { background: #2a2a2a; }
+.calc-op:active { background: #3a3a3a; }
+.calc-fn { background: #1a1a1a; color: #f88; }
+.calc-fn:hover { background: #2a2a2a; }
+.calc-fn:active { background: #3a3a3a; }
+.calc-eq { background: var(--accent); color: #fff; }
+.calc-eq:hover { filter: brightness(1.15); }
+.calc-eq:active { filter: brightness(0.9); }
+</style>
 
 <div id="paint" data-app-id="paint" data-template="true" class="window window-template" style="width:480px;height:350px;">
 <div class="titlebar" onmousedown="dragStart(event,this.parentElement)">
@@ -2393,6 +3654,44 @@ Image Viewer
     </div>
 </div>
 <div class="resizer"></div>
+</div>
+
+<div id="localstr" data-app-id="localstr" data-template="true" class="window window-template" style="width:560px;height:390px;">
+    <div class="titlebar" onmousedown="dragStart(event,this.parentElement)">
+        LocalSTR
+        <div class="win-btns">
+            <div class="btn" onclick="minimize(this)">_</div>
+            <div class="btn" onclick="maximize(this)">□</div>
+            <div class="btn" onclick="closeWin(this)">X</div>
+        </div>
+    </div>
+    <div class="content" style="padding:0;background:linear-gradient(180deg,var(--accent-soft),rgba(0,0,0,0.1));color:#ddd;overflow:hidden;">
+        <div style="height:100%;display:flex;flex-direction:column;">
+            <div style="padding:18px 20px;border-bottom:1px solid var(--accent-border);background:rgba(0,0,0,0.24);">
+                <div style="font-size:22px;font-weight:800;color:#fff;letter-spacing:0;">LocalSTR</div>
+                <div style="font-size:12px;color:#aaa;margin-top:4px;line-height:1.5;">Manage ATBox local storage. Export the current OSDisk config, import a saved one, or reset the stored OS state.</div>
+            </div>
+            <div style="flex:1;padding:18px 20px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;align-items:stretch;">
+                <button onclick="localstrDownload(this)" style="font-family:inherit;text-align:left;padding:14px;border-radius:6px;border:1px solid var(--accent-border);background:rgba(255,255,255,0.06);color:#fff;cursor:pointer;">
+                    <div style="font-size:15px;font-weight:800;margin-bottom:8px;color:var(--accent);">Download</div>
+                    <div style="font-size:11px;line-height:1.5;color:#aaa;">Save every localStorage key and value into an OSDisk JSON file.</div>
+                </button>
+                <button onclick="localstrPickImport(this)" style="font-family:inherit;text-align:left;padding:14px;border-radius:6px;border:1px solid var(--accent-border);background:rgba(255,255,255,0.06);color:#fff;cursor:pointer;">
+                    <div style="font-size:15px;font-weight:800;margin-bottom:8px;color:var(--accent);">Import</div>
+                    <div style="font-size:11px;line-height:1.5;color:#aaa;">Mount a saved OSDisk JSON config into local storage.</div>
+                </button>
+                <button onclick="localstrReset(this)" style="font-family:inherit;text-align:left;padding:14px;border-radius:6px;border:1px solid var(--accent-border);background:rgba(255,255,255,0.06);color:#fff;cursor:pointer;">
+                    <div style="font-size:15px;font-weight:800;margin-bottom:8px;color:var(--accent);">Reset</div>
+                    <div style="font-size:11px;line-height:1.5;color:#aaa;">Clear all local storage keys and restart into a clean OS state.</div>
+                </button>
+            </div>
+            <div style="padding:10px 20px;border-top:1px solid var(--accent-border);font-size:11px;color:#777;background:rgba(0,0,0,0.22);">
+                Changes made here can affect themes, files, boot state, saved settings, and app data.
+            </div>
+            <input data-role="localstr-import" type="file" accept="application/json" style="display:none;" onchange="localstrImportFile(event)">
+        </div>
+    </div>
+    <div class="resizer"></div>
 </div>
 
 <div id="explorer" data-app-id="explorer" data-template="true" class="window window-template" style="width: 640px; height: 400px;">
@@ -2729,6 +4028,177 @@ function showSystemPrompt(message, defaultValue = "", options = {}) {
     });
 }
 
+function localstrCollectStorage() {
+    const keys = Object.keys(localStorage).sort();
+    const entries = {};
+    keys.forEach(key => {
+        entries[key] = localStorage.getItem(key);
+    });
+
+    return {
+        app: "LocalSTR",
+        saveFormat: "ATBox-OSDisk-localStorage",
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        keyCount: keys.length,
+        keys,
+        entries
+    };
+}
+
+function localstrDownload(btn) {
+    const data = localstrCollectStorage();
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+    link.href = url;
+    link.download = `localstr-osdisk-${stamp}.json`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+}
+
+function localstrPickImport(btn) {
+    const win = btn.closest(".window");
+    const input = win ? win.querySelector('[data-role="localstr-import"]') : null;
+    if (input) input.click();
+}
+
+function localstrNormalizeImport(data) {
+    if (!data || typeof data !== "object") {
+        throw new Error("Invalid OSDisk file.");
+    }
+
+    if (data.entries && typeof data.entries === "object" && !Array.isArray(data.entries)) {
+        return data.entries;
+    }
+
+    if (data.localStorage && typeof data.localStorage === "object" && !Array.isArray(data.localStorage)) {
+        return data.localStorage;
+    }
+
+    throw new Error("This JSON does not contain a LocalSTR OSDisk config.");
+}
+
+async function localstrImportFile(event) {
+    const input = event.target;
+    const file = input.files && input.files[0];
+    if (!file) return;
+
+    try {
+        const text = await file.text();
+        const entries = localstrNormalizeImport(JSON.parse(text));
+        await localstrImport(entries);
+    } catch (error) {
+        showSystemError(error.message || "Could not import that OSDisk file.", "LocalSTR Import");
+    } finally {
+        input.value = "";
+    }
+}
+
+async function localstrReset(btn) {
+    const first = await showSystemConfirm("This will reset ATBox local storage. Continue?", {
+        heading: "LocalSTR Reset Warning",
+        titlebar: "LocalSTR",
+        okLabel: "Yes",
+        cancelLabel: "No"
+    });
+    if (!first) return;
+
+    const last = await showSystemConfirm("Last warning: all local storage keys will be cleared. Continue?", {
+        heading: "Final Warning",
+        titlebar: "LocalSTR",
+        okLabel: "Reset",
+        cancelLabel: "Cancel"
+    });
+    if (!last) return;
+
+    localstrRunOSDiskSequence({
+        rootLine: "~ ROOT : Resetting OS",
+        successLine: "The os has been sucessfully reset.",
+        apply: () => localStorage.clear()
+    });
+}
+
+async function localstrImport(entries) {
+    const first = await showSystemConfirm("This will import an OSDisk config and overwrite local storage. Continue?", {
+        heading: "LocalSTR Import Warning",
+        titlebar: "LocalSTR",
+        okLabel: "Yes",
+        cancelLabel: "No"
+    });
+    if (!first) return;
+
+    const last = await showSystemConfirm("Last warning: current local storage will be replaced. Continue?", {
+        heading: "Final Warning",
+        titlebar: "LocalSTR",
+        okLabel: "Import",
+        cancelLabel: "Cancel"
+    });
+    if (!last) return;
+
+    localstrRunOSDiskSequence({
+        rootLine: "~ ROOT : Importing OSDisk",
+        successLine: "OSDisk config has been sucessfully mounted.",
+        apply: () => {
+            localStorage.clear();
+            Object.keys(entries).forEach(key => {
+                localStorage.setItem(key, String(entries[key] ?? ""));
+            });
+        }
+    });
+}
+
+function localstrRunOSDiskSequence({ rootLine, successLine, apply }) {
+    document.body.classList.add("os-booting");
+    document.querySelectorAll('.window[data-template="false"]').forEach(win => win.remove());
+    syncTaskbarButtons();
+    closeStartMenu();
+
+    const desktop = document.getElementById("desktop");
+    const taskbar = document.getElementById("taskbar");
+    const screen = document.getElementById("shutdownScreen");
+
+    if (desktop) {
+        desktop.style.display = "none";
+        desktop.style.opacity = "0";
+    }
+    if (taskbar) taskbar.style.display = "none";
+
+    if (!screen) return;
+    screen.style.display = "block";
+    screen.style.opacity = "1";
+    screen.style.background = "transparent";
+    screen.style.color = "#fff";
+    screen.style.fontFamily = "Consolas, monospace";
+    screen.style.fontSize = "18px";
+    screen.style.padding = "28px";
+    screen.style.whiteSpace = "pre-line";
+    screen.innerHTML = "";
+
+    setTimeout(() => {
+        screen.style.background = "black";
+        setTimeout(() => {
+            screen.textContent = rootLine;
+            setTimeout(() => {
+                try {
+                    apply();
+                } catch (error) {
+                    screen.textContent = rootLine + "\nLocalSTR operation failed: " + (error.message || error);
+                    return;
+                }
+                screen.textContent = rootLine + "\n" + successLine;
+                setTimeout(() => {
+                    location.reload();
+                }, 300000);
+            }, 3000);
+        }, 2000);
+    }, 3000);
+}
+
 function acceptSystemDialog() {
     if (!currentSystemDialog) return;
 
@@ -2906,6 +4376,46 @@ function atgmNavToGame(section) {
     atgmNavToSection(win, section);
 }
 
+function atgmLaunchVoxelFS(el) {
+    const win = cloneAppWindow('voxelfs-window');
+    if (!win) return;
+    initVoxelFS(win);
+}
+
+function initVoxelFS(win) {
+    const iframe = win.querySelector('[data-role="voxelfs-frame"]');
+    const source = document.getElementById('voxelfs-srcdoc');
+    if (!iframe || !source) return;
+    iframe.srcdoc = source.textContent.replace(/<\\\/script>/g, '<' + '/script>');
+}
+
+window.addEventListener('message', event => {
+    const data = event.data;
+    if (!data || data.type !== 'voxelfs-download-world') return;
+
+    const json = typeof data.json === 'string' ? data.json : '';
+    if (!json) return;
+
+    const filename = typeof data.filename === 'string' && data.filename.endsWith('.json')
+        ? data.filename
+        : 'voxelfs-world.json';
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+});
+
+function voxelfsClose(btn) {
+    const win = btn.closest('.window');
+    const iframe = win ? win.querySelector('[data-role="voxelfs-frame"]') : null;
+    if (iframe) iframe.srcdoc = '';
+    closeWin(btn);
+}
 function atgmLaunchPong(el) {
     const win = cloneAppWindow('pong-window');
     if (!win) return;
@@ -3696,7 +5206,7 @@ function explorerNavSidebar(el, folderName) {
     renderExplorer(win || undefined);
 }
 
-const APP_TEMPLATE_IDS = ["atguide", "guide", "notepad", "cmd", "calc", "paint", "imageviewer", "explorer", "app-atgamemedia", "pong-window", "skansak-window", "tetris-window", "themes", "atiexi"];
+const APP_TEMPLATE_IDS = ["atguide", "guide", "notepad", "cmd", "calc", "paint", "imageviewer", "localstr", "explorer", "app-atgamemedia", "pong-window", "skansak-window", "tetris-window", "voxelfs-window", "themes", "atiexi", "controlpanel"];
 const explorerStates = new WeakMap();
 const notepadStates = new WeakMap();
 const cmdStates = new WeakMap();
@@ -3752,9 +5262,9 @@ if (explorerView) explorerView.addEventListener('drop', (e) => {
 let inBootMgr = false;
 
 const bootOptions = [
-    "AT Box 1.0.1        | Codev 1.8.2 [Stable] [Build 0816]",
-    "Recovery Mode       | Codev 1.7.4 (Safe)   [Fallback]",
-    "AT Diagonistics     | DIAG Console Kernal  [Prerelease]"
+    "AT Vista Normal Boot      | AT Box 1.0.3 [Default]",
+    "AT Vista Recovery Mode    | Safe Mode [Fallback]",
+    "AT Vista Diagnostics      | DIAG Console [Prerelease]"
 ];
 
 let selected = 0;
@@ -3796,7 +5306,25 @@ const EASTER_EGG_EVENT_TYPES = [
 ];
 
 const CMD_PROMPT = "C:\\ATBox\\System\\ ";
-const RECOVERY_DISABLED_APPS = new Set(["guide", "notepad", "calc", "paint", "imageviewer", "themes", "app-atgamemedia", "pong-window", "skansak-window", "tetris-window"]);
+const RECOVERY_DISABLED_APPS = new Set([
+    "atguide",
+    "guide",
+    "cmd",
+    "imageviewer",
+    "themes",
+    "sandbox",
+    "winmine",
+    "sysmon",
+    "atamp",
+    "matrix",
+    "atiexi",
+    "app-atgamemedia",
+    "pong-window",
+    "skansak-window",
+    "tetris-window",
+    "voxelfs-window",
+    "controlpanel"
+]);
 const APP_LABELS = {
     atguide: "AT Guide",
     guide: "Guide.txt",
@@ -3804,13 +5332,16 @@ const APP_LABELS = {
     explorer: "Explorer",
     cmd: "Command Prompt",
     calc: "Calculator",
+    controlpanel: "Control Panel",
     paint: "Paint",
     imageviewer: "Image Viewer",
+    localstr: "LocalSTR",
     themes: "Themes",
     "app-atgamemedia": "AT Game Media",
     "pong-window": "Pong",
     "skansak-window": "SkanSak",
     "tetris-window": "Tetris",
+    "voxelfs-window": "VoxelFS",
     atiexi: "AT Iexi"
 };
 
@@ -3823,11 +5354,13 @@ const TASKBAR_ICONS = {
     calc: () => String.fromCodePoint(0x1F9EE),
     paint: () => String.fromCodePoint(0x1F3A8),
     imageviewer: () => String.fromCodePoint(0x1F5BC),
+    localstr: () => "LS",
     themes: () => String.fromCodePoint(0x1F5BC),
     "app-atgamemedia": () => String.fromCodePoint(0x1F3AE),
     "pong-window": () => String.fromCodePoint(0x1F3F8),
     "skansak-window": () => String.fromCodePoint(0x1F40D),
     "tetris-window": () => String.fromCodePoint(0x1F9F1),
+    "voxelfs-window": () => "VFS",
     atiexi: () => String.fromCodePoint(0x1F310)
 };
 
@@ -4721,6 +6254,9 @@ function showLoginScreen() {
     if (passWrap) passWrap.style.display = storedPass ? "flex" : "none";
 
     if (loginScreen) {
+        if (typeof themesApplyLockScreenWallpaper === "function") {
+            themesApplyLockScreenWallpaper();
+        }
         loginScreen.style.display = "flex";
         loginScreen.style.opacity = "1";
     }
@@ -4906,7 +6442,216 @@ function fadeOut(el) {
     window._runSafeModeKernelBoot = runSafeModeKernelBoot;
 })();
 
-setTimeout(() => {
+function runGlobalBootLoader(onVistaBoot) {
+    const loader = document.getElementById("globalBootLoader");
+    const splash = document.getElementById("globalBootSplash");
+    const bios = document.getElementById("globalBootBios");
+    const menu = document.getElementById("globalBootMenuOverlay");
+    if (!loader) {
+        onVistaBoot();
+        return;
+    }
+
+    let locked = false;
+    const routes = [
+        { key: "F1", file: null },
+        { key: "F2", file: "atfox.html" },
+        { key: "F3", file: "aurora.html" },
+        { key: "F5", file: "ATDOS.html" },
+        { key: "F6", file: "mac5.html" }
+    ];
+
+    const menuList = document.getElementById("globalBootMenuList");
+    const biosOptionCheck = document.getElementById("biosOptionCheck");
+    const biosOptionExit = document.getElementById("biosOptionExit");
+    const biosDetails = document.getElementById("biosDetails");
+    const biosDetailsInner = document.getElementById("biosDetailsInner");
+    const biosCheckWhy = document.getElementById("biosCheckWhy");
+    const biosContent = document.getElementById("globalBootBiosContent");
+
+    function adaptBiosToResolution() {
+        if (!bios || !biosContent) return;
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        let size = 1;
+        if (w < 1024) size = 0.85;
+        else if (w < 1366) size = 0.92;
+        else size = 1;
+        if (h < 760) size = Math.min(size, 0.82);
+        biosContent.style.transform = `scale(${size})`;
+        biosContent.style.transformOrigin = 'top center';
+    }
+
+    window.addEventListener("resize", adaptBiosToResolution);
+    window.addEventListener("keydown", handleGlobalBootKey, true);
+
+    function renderGlobalMenu() {
+        if (!menuList) return;
+        const labels = [
+            "Continue Boot - Vista (F1)",
+            "Boot AT Fox (F2)",
+            "Boot AT Aurora (F3)",
+            "Reload Boot (F4)",
+            "Boot AT DoS (F5)",
+            "Boot AT MAC (F6)"
+        ];
+        menuList.innerHTML = labels.map((label) => {
+            return `<div style="padding:12px 14px;border:1px solid rgba(255,255,255,0.18);background:transparent;color:#ddd;font-weight:400;">${label}</div>`;
+        }).join("");
+    }
+
+    function scrollBiosDetails(delta) {
+        if (!biosDetailsInner) return;
+        biosDetailsInner.scrollTop += delta;
+    }
+
+    function toggleBiosDetails() {
+        if (!biosDetails) return;
+        const open = biosDetails.style.display !== "block";
+        biosDetails.style.display = open ? "block" : "none";
+        if (open && biosDetailsInner) biosDetailsInner.scrollTop = 0;
+    }
+
+    function showOnly(which) {
+        [splash, bios, menu].forEach(el => { if (el) el.style.display = "none"; });
+        if (which) {
+            which.style.display = "block";
+            which.style.opacity = "1";
+        }
+    }
+
+    function finishToVista() {
+        if (locked) return;
+        locked = true;
+        window.removeEventListener("keydown", handleGlobalBootKey, true);
+        showOnly(null);
+        loader.style.background = "#000";
+        loader.style.opacity = "1";
+        setTimeout(() => {
+            loader.style.opacity = "0";
+            setTimeout(() => {
+                loader.style.display = "none";
+                onVistaBoot();
+            }, 850);
+        }, 3000);
+    }
+
+    function openGlobalMenu() {
+        if (locked) return;
+        renderGlobalMenu();
+        showOnly(menu);
+        loader.style.opacity = "1";
+    }
+
+    function openBios() {
+        if (locked) return;
+        if (biosDetails) biosDetails.style.display = "none";
+        if (biosDetailsInner) biosDetailsInner.scrollTop = 0;
+        updateGlobalBiosClock();
+        adaptBiosToResolution();
+        showOnly(bios);
+        if (bios) {
+            bios.tabIndex = -1;
+            bios.focus({ preventScroll: true });
+        }
+        loader.style.opacity = "1";
+    }
+
+    function updateGlobalBiosClock() {
+        const timeEl = document.getElementById("globalBiosTime");
+        const dateEl = document.getElementById("globalBiosDate");
+        if (!timeEl || !dateEl) return;
+        const now = new Date();
+        const hh = String(now.getHours()).padStart(2, "0");
+        const mm = String(now.getMinutes()).padStart(2, "0");
+        const ss = String(now.getSeconds()).padStart(2, "0");
+        const dd = String(now.getDate()).padStart(2, "0");
+        const mo = String(now.getMonth() + 1).padStart(2, "0");
+        const yyyy = now.getFullYear();
+        timeEl.textContent = `${hh}:${mm}:${ss}`;
+        dateEl.textContent = `${dd}-${mo}-${yyyy}`;
+    }
+
+    function loadGlobalRoute(index) {
+        const route = routes[index] || routes[0];
+        if (!route.file) {
+            finishToVista();
+            return;
+        }
+        locked = true;
+        window.removeEventListener("keydown", handleGlobalBootKey, true);
+        window.location.href = route.file;
+    }
+
+    if (biosOptionCheck) biosOptionCheck.addEventListener("click", () => {
+        toggleBiosDetails();
+    });
+    if (biosOptionExit) biosOptionExit.addEventListener("click", () => {
+        finishToVista();
+    });
+    if (biosCheckWhy) biosCheckWhy.addEventListener("click", () => {
+        toggleBiosDetails();
+    });
+
+    function handleGlobalBootKey(e) {
+        if (loader.style.display === "none") return;
+        const key = e.key;
+        if (key === "F2" && (!menu || menu.style.display !== "block")) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            openBios();
+            return;
+        }
+        if (key === "F5" && (!menu || menu.style.display !== "block")) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            openGlobalMenu();
+            return;
+        }
+        if (menu && menu.style.display === "block") {
+            if (key === "F1") { e.preventDefault(); loadGlobalRoute(0); }
+            if (key === "F2") { e.preventDefault(); loadGlobalRoute(1); }
+            if (key === "F3") { e.preventDefault(); loadGlobalRoute(2); }
+            if (key === "F4") { e.preventDefault(); location.reload(); }
+            if (key === "F5") { e.preventDefault(); loadGlobalRoute(3); }
+            if (key === "F6") { e.preventDefault(); loadGlobalRoute(4); }
+        }
+        if (bios && bios.style.display === "block") {
+            if (key === "Escape") {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                finishToVista();
+            }
+            if ((key === "ArrowUp" || key === "ArrowDown") && biosDetails && biosDetails.style.display === "block") {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                scrollBiosDetails(key === "ArrowUp" ? -40 : 40);
+            }
+            if (key === "Enter") {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                toggleBiosDetails();
+            }
+        }
+    }
+
+    setInterval(() => {
+        if (bios && bios.style.display === "block") updateGlobalBiosClock();
+    }, 1000);
+    setTimeout(() => {
+        if (splash && !locked) {
+            splash.style.display = "block";
+            requestAnimationFrame(() => { splash.style.opacity = "1"; });
+        }
+    }, 1000);
+    setTimeout(() => {
+        if (!locked && (!menu || menu.style.display !== "block") && (!bios || bios.style.display !== "block")) {
+            finishToVista();
+        }
+    }, 3600);
+}
+
+function startVistaBootSequence() {
 
     const bootScreen = document.getElementById("bootScreen");
     const logo = document.getElementById("logoAnim");
@@ -4935,25 +6680,13 @@ setTimeout(() => {
             if (sysText) sysText.style.display = "none";
             return showStartupTarget();
 
-            // ✅ restore input (VERY IMPORTANT)
-            document.body.style.pointerEvents = "auto";
-
-            const loginScreen = document.getElementById("loginScreen");
-            const input = document.getElementById("loginUser");
-
-            loginScreen.style.display = "block";
-
-            // ✅ make input usable
-            input.focus();
-            input.addEventListener("keypress", e => {
-                if (e.key === "Enter") login();
-            });
-
         }, 2000);
 
     }, 8000);
 
-}, 0);
+}
+
+runGlobalBootLoader(startVistaBootSequence);
 
 
 // clock
@@ -4968,14 +6701,76 @@ setInterval(() => {
     clock.innerText = `${h}:${m} ${d.getHours() >= 12 ? "PM" : "AM"}`;
 }, 1000);
 
+// clock popup
+let clockPopupInterval;
+
+document.getElementById("clock").addEventListener("click", function(e) {
+    e.stopPropagation();
+    let popup = document.getElementById("clockPopup");
+    if (!popup) {
+        popup = document.createElement("div");
+        popup.id = "clockPopup";
+        popup.className = "clock-popup";
+        document.body.appendChild(popup);
+    }
+    if (popup.style.display === "block") {
+        popup.style.display = "none";
+        if (clockPopupInterval) clearInterval(clockPopupInterval);
+        return;
+    }
+    popup.style.display = "block";
+    updateClockPopup(popup);
+    if (clockPopupInterval) clearInterval(clockPopupInterval);
+    clockPopupInterval = setInterval(() => updateClockPopup(popup), 1000);
+});
+
+document.addEventListener("click", function(e) {
+    let popup = document.getElementById("clockPopup");
+    if (popup && popup.style.display === "block" && !e.target.closest("#clock") && !e.target.closest("#clockPopup")) {
+        popup.style.display = "none";
+        if (clockPopupInterval) clearInterval(clockPopupInterval);
+    }
+});
+
+function updateClockPopup(popup) {
+    const now = new Date();
+    const local = now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true });
+    const zones = [
+        { label: "UTC", offset: 0 },
+        { label: "US Eastern", offset: -5 },
+        { label: "US Central", offset: -6 },
+        { label: "US Mountain", offset: -7 },
+        { label: "US Pacific", offset: -8 },
+        { label: "London", offset: 0 },
+        { label: "Paris/Berlin", offset: 1 },
+        { label: "Tokyo", offset: 9 },
+        { label: "Sydney", offset: 10 },
+    ];
+    const utc = new Date(now.getTime() + now.getTimezoneOffset() * 60000);
+    let html = '<div style="font-size:14px;color:var(--accent);margin-bottom:10px;text-align:center;font-weight:bold;">' + local + '</div>';
+    html += '<div style="font-size:10px;color:#666;margin-bottom:6px;text-align:center;">─ More Time Zones ─</div>';
+    for (let i = 0; i < zones.length; i++) {
+        const z = zones[i];
+        const t = new Date(utc.getTime() + z.offset * 3600000);
+        const time = t.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true });
+        html += '<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #222;font-size:11px;">' +
+            '<span style="color:#888;">' + z.label + '</span>' +
+            '<span style="color:#ddd;">' + time + '</span></div>';
+    }
+    popup.innerHTML = html;
+}
+
 // z-index system
 let z=1;
 
-// Start Menu Toggle
 function toggleStartMenu() {
-    mountStartMenuLayer();
     let menu = document.getElementById('startMenu');
-    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+    if (!menu) return;
+    if (menu.style.display === 'block') {
+        menu.style.display = 'none';
+    } else {
+        menu.style.display = 'block';
+    }
 }
 
 // ---- AT GUIDE NAV ----
@@ -5005,13 +6800,11 @@ function playStartupSound() {
         let settled = false;
         const done = (ok) => { if (!settled) { settled = true; resolve(ok); } };
         audio.onerror = () => {
-            showSystemError("Startup Sound is Missing!", "Audio Error");
             done(false);
         };
         audio.onended = () => done(true);
         audio.oncanplaythrough = () => {
             audio.play().catch(() => {
-                showSystemError("Startup Sound is Missing!", "Audio Error");
                 done(false);
             });
         };
@@ -5073,9 +6866,6 @@ function login() {
             const taskbarEl = document.getElementById("taskbar");
             if (taskbarEl) taskbarEl.style.display = "flex";
 
-            // Open AT Guide while still covered by blackout
-            openApp('atguide');
-
             // NOW fade out the blackout and fade in the desktop
             setTimeout(() => {
                 desktop.style.transition = "opacity 0.8s";
@@ -5089,8 +6879,7 @@ function login() {
 
                 setTimeout(() => {
                     black.style.display = "none";
-                    // Play startup sound after everything is fully visible
-                    playStartupSound();
+
                 }, 800);
 
             }, 80);
@@ -5103,14 +6892,15 @@ function login() {
 function renderBootMenu() {
     const el = document.getElementById("bootText");
 
-    let output = "== AT BIOS deb.0816 UTILITY ==\n\n";
-    output += "Select Boot Option:\n\n";
+    let output = "AT Vista Option Menu\n";
+    output += "────────────────────────────────────────────────────────────\n\n";
+    output += "Choose how AT Vista should start:\n\n";
 
     bootOptions.forEach((opt, i) => {
         output += (i === selected ? "> " : "  ") + opt + "\n";
     });
 
-    output += "\nUse ↑ ↓ keys. Press ENTER.";
+    output += "\n[ENTER] Continue    [↑/↓] Select    [ESC] Normal Boot";
 
     el.textContent = output; // ✅ overwrite instead of stacking
 }
@@ -5515,11 +7305,9 @@ function initializeAppWindow(win, id, options = {}) {
             initializeCmdWindow(win);
             break;
         case "calc": {
-            const input = getRoleElement(win, "calc-input");
-            if (input) {
-                input.value = options.value || "";
-                requestAnimationFrame(() => input.focus());
-            }
+            calcState = { display: '0', operand: null, operator: null, reset: false };
+            const d = win.querySelector('[data-role="calc-display"]');
+            if (d) d.value = '0';
             break;
         }
         case "paint":
@@ -5550,27 +7338,80 @@ function openApp(id, options = {}){
     const template = document.getElementById(id);
     if (!template) return false;
 
+    if (id === "localstr" && !options.localstrConfirmed) {
+        showSystemConfirm("Are you sure you want to launch a app that makes changes to your device?", {
+            heading: "User Account Control",
+            titlebar: "LocalSTR",
+            okLabel: "Yes",
+            cancelLabel: "No"
+        }).then(confirmed => {
+            if (confirmed) openApp("localstr", { ...options, localstrConfirmed: true });
+        });
+        return false;
+    }
+
     const instanceWin = cloneAppWindow(id);
     initializeAppWindow(instanceWin, id, options);
-    return instanceWin;
 
-    let win = document.getElementById(id);
-    if (!win) return false;
-
-    win.style.display = "block";
-    win.style.zIndex = ++z;
-
+    // Run custom setups for old apps using the fresh instance window wrapper
     if (id === 'notepad') {
-        const ta = document.querySelector('#notepad textarea');
-        ta.value = '';
-        ta.dataset.currentFile = '';
+        const ta = instanceWin.querySelector('textarea');
+        if (ta && options.content == null && options.fileName == null) {
+            ta.value = '';
+            ta.dataset.currentFile = '';
+        }
     }
 
     if (id === 'explorer') {
         renderExplorer(); // ✅ THIS FIXES YOUR EMPTY START ISSUE
     }
 
-    return true;
+    // NEW APP RUNTIME ENGINES: Boot up interactive scripts for your new apps
+    if (id === 'winmine' && typeof initWinmine === 'function') {
+        initWinmine(instanceWin);
+    }
+    if (id === 'sysmon' && typeof initSysmon === 'function') {
+        initSysmon(instanceWin);
+    }
+    if (id === 'atamp' && typeof initAtamp === 'function') {
+        initAtamp(instanceWin);
+    }
+    if (id === 'matrix' && typeof initMatrix === 'function') {
+        initMatrix(instanceWin);
+    }
+
+    if (id === 'sandbox') {
+        const iframe = instanceWin.querySelector('iframe');
+        if (iframe) {
+            const savedUrl = localStorage.getItem('atbox_sandbox_url');
+            if (savedUrl) iframe.src = savedUrl;
+        }
+    }
+
+    if (id === 'voxelfs-window' && typeof initVoxelFS === 'function') {
+        initVoxelFS(instanceWin);
+    }
+
+    if (id === 'pong-window' && typeof pongInitLoader === 'function') {
+        pongInitLoader(instanceWin);
+    }
+
+    if (id === 'tetris-window' && typeof tetrisInit === 'function') {
+        tetrisInit(instanceWin);
+    }
+
+    if (id === 'skansak-window') {
+        const overlay = instanceWin.querySelector('[data-role="skansak-overlay"]');
+        const title = instanceWin.querySelector('[data-role="skansak-title"]');
+        const subtitle = instanceWin.querySelector('[data-role="skansak-subtitle"]');
+        const btn = instanceWin.querySelector('[data-role="skansak-start-btn"]');
+        if (overlay) overlay.style.display = 'flex';
+        if (title) title.textContent = 'SkanSak';
+        if (subtitle) subtitle.textContent = 'Use arrow keys to play';
+        if (btn) { btn.textContent = 'START'; btn.style.display = ''; }
+    }
+
+    return instanceWin;
 }
 
 // drag system
@@ -5581,6 +7422,7 @@ function dragStop(){
     active.style.left = (initialLeft + currentDx) + 'px';
     active.style.top = (initialTop + currentDy) + 'px';
     active.style.transform = '';
+    active.classList.remove('dragging');
     active = null;
     document.removeEventListener('mousemove', dragMove);
     document.removeEventListener('mouseup', dragStop);
@@ -5601,6 +7443,7 @@ function dragStart(e,win){
         offX = e.clientX - initialLeft;
         offY = e.clientY - initialTop;
         win.style.zIndex=++z;
+        win.classList.add('dragging');
         document.addEventListener('mousemove', dragMove);
         document.addEventListener('mouseup', dragStop);
         document.addEventListener('mouseleave', dragStop);
@@ -5618,15 +7461,20 @@ function dragMove(e){
 // window resize
 let resizing=null, startWidth, startHeight, startX, startY;
 
-document.addEventListener('mousedown', function(e){
+document.addEventListener('pointerdown', function(e){
     if(e.target.classList.contains('resizer')){
+        e.preventDefault();
+        if (active) return;
+        resizeStop();
         resizing = e.target.closest('.window');
         startWidth = resizing.offsetWidth;
         startHeight = resizing.offsetHeight;
         startX = e.clientX;
         startY = e.clientY;
-        document.onmousemove = resizeMove;
-        document.onmouseup = ()=>{resizing=null; document.onmousemove=null; document.onmouseup=null;};
+        document.addEventListener('pointermove', resizeMove);
+        document.addEventListener('pointerup', resizeStop);
+        document.addEventListener('pointerleave', resizeStop);
+        window.addEventListener('blur', resizeStop);
     }
 });
 
@@ -5634,6 +7482,15 @@ function resizeMove(e){
     if(!resizing) return;
     resizing.style.width = Math.max(240, startWidth + (e.clientX - startX)) + 'px';
     resizing.style.height = Math.max(180, startHeight + (e.clientY - startY)) + 'px';
+}
+
+function resizeStop(){
+    if (!resizing) return;
+    resizing = null;
+    document.removeEventListener('pointermove', resizeMove);
+    document.removeEventListener('pointerup', resizeStop);
+    document.removeEventListener('pointerleave', resizeStop);
+    window.removeEventListener('blur', resizeStop);
 }
 
 // controls
@@ -5693,6 +7550,9 @@ function startShutdown(delay) {
     closeStartMenu();
 
     setTimeout(() => {
+
+        const loginEl = document.getElementById('loginScreen');
+        if (loginEl) loginEl.style.display = 'none';
 
         document.body.classList.add("os-booting");
 
@@ -5768,6 +7628,8 @@ function startShutdown(delay) {
 function startRestart(delay) {
     closeStartMenu();
     setTimeout(()=>{
+        const loginEl = document.getElementById('loginScreen');
+        if (loginEl) loginEl.style.display = 'none';
         document.body.classList.add("os-booting");
         // Remove all running windows so they don't persist after reload
         document.querySelectorAll('.window[data-template="false"]').forEach(win => win.remove());
@@ -6063,16 +7925,180 @@ function addCmdLine(text, target) {
 }
 
 // calculator
-function calculate(target){
-    const win = resolveWindow(target, "calc");
-    const calcInput = getRoleElement(win, "calc-input");
-    if (!calcInput) return;
+let calcState = { display: '0', operand: null, operator: null, reset: false };
 
-    try {
-        calcInput.value = eval(calcInput.value);
-    } catch (e) {
-        calcInput.value = "Error";
+function calcGetWin(el) {
+    return el ? el.closest('.window') : document.querySelector('.window[data-app-id="calc"][data-template="false"]');
+}
+
+function calcUpdateDisplay(val, win) {
+    win = win || calcGetWin();
+    if (!win) return;
+    const d = win.querySelector('[data-role="calc-display"]');
+    if (d) { d.value = val; calcState.display = val; }
+}
+
+function calcDigit(d) {
+    const win = calcGetWin();
+    if (!win) return;
+    if (calcState.reset) { calcState.display = '0'; calcState.reset = false; }
+    if (calcState.display === '0' && d !== '.') calcState.display = d;
+    else calcState.display += d;
+    calcUpdateDisplay(calcState.display, win);
+}
+
+function calcOp(op) {
+    const win = calcGetWin();
+    if (!win) return;
+    const current = parseFloat(calcState.display);
+    if (calcState.operator !== null && !calcState.reset) {
+        calcState.display = String(calcEvaluate(calcState.operand, current, calcState.operator));
+        calcUpdateDisplay(calcState.display, win);
     }
+    calcState.operand = parseFloat(calcState.display);
+    calcState.operator = op;
+    calcState.reset = true;
+}
+
+function calcEvaluate(a, b, op) {
+    switch (op) {
+        case '+': return a + b;
+        case '-': return a - b;
+        case '*': return a * b;
+        case '/': return b !== 0 ? a / b : 'Error';
+        default: return b;
+    }
+}
+
+function calcEquals() {
+    const win = calcGetWin();
+    if (!win) return;
+    if (calcState.operator === null) return;
+    const current = parseFloat(calcState.display);
+    const result = calcEvaluate(calcState.operand, current, calcState.operator);
+    calcState.display = String(result);
+    calcState.operator = null;
+    calcState.operand = null;
+    calcState.reset = true;
+    calcUpdateDisplay(calcState.display, win);
+}
+
+function calcClear() {
+    const win = calcGetWin();
+    calcState = { display: '0', operand: null, operator: null, reset: false };
+    calcUpdateDisplay('0', win);
+}
+
+function calcNegate() {
+    const win = calcGetWin();
+    if (!win) return;
+    calcState.display = String(parseFloat(calcState.display) * -1);
+    calcUpdateDisplay(calcState.display, win);
+}
+
+function calcPercent() {
+    const win = calcGetWin();
+    if (!win) return;
+    calcState.display = String(parseFloat(calcState.display) / 100);
+    calcUpdateDisplay(calcState.display, win);
+}
+
+function calcSwitchMode(el, mode) {
+    const win = el.closest('.window');
+    win.querySelectorAll('.calc-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    const buttons = win.querySelector('[data-role="calc-buttons"]');
+    const measure = win.querySelector('[data-role="calc-measure"]');
+    if (mode === 'calc') {
+        buttons.style.display = 'flex';
+        measure.style.display = 'none';
+    } else {
+        buttons.style.display = 'none';
+        measure.style.display = 'flex';
+        calcInitMeasure(win);
+    }
+}
+
+const CALC_UNITS = {
+    length: [
+        { label: 'Millimeters', value: 'mm', factor: 0.001 },
+        { label: 'Centimeters', value: 'cm', factor: 0.01 },
+        { label: 'Meters', value: 'm', factor: 1 },
+        { label: 'Kilometers', value: 'km', factor: 1000 },
+        { label: 'Inches', value: 'in', factor: 0.0254 },
+        { label: 'Feet', value: 'ft', factor: 0.3048 }
+    ],
+    weight: [
+        { label: 'Milligrams', value: 'mg', factor: 0.000001 },
+        { label: 'Grams', value: 'g', factor: 0.001 },
+        { label: 'Kilograms', value: 'kg', factor: 1 },
+        { label: 'Pounds', value: 'lb', factor: 0.453592 },
+        { label: 'Ounces', value: 'oz', factor: 0.0283495 }
+    ],
+    temperature: [
+        { label: 'Celsius', value: 'c' },
+        { label: 'Fahrenheit', value: 'f' },
+        { label: 'Kelvin', value: 'k' }
+    ]
+};
+
+function calcInitMeasure(win) {
+    const typeSel = win.querySelector('[data-role="calc-measure-type"]');
+    const fromUnit = win.querySelector('[data-role="calc-measure-from-unit"]');
+    const toUnit = win.querySelector('[data-role="calc-measure-to-unit"]');
+    if (!typeSel || !fromUnit || !toUnit) return;
+    calcPopulateUnits(typeSel.value, fromUnit, toUnit);
+    calcMeasureUpdate();
+}
+
+function calcPopulateUnits(type, fromSel, toSel) {
+    const units = CALC_UNITS[type] || [];
+    fromSel.innerHTML = '';
+    toSel.innerHTML = '';
+    units.forEach((u, i) => {
+        fromSel.innerHTML += '<option value="' + u.value + '">' + u.label + '</option>';
+        toSel.innerHTML += '<option value="' + u.value + '">' + u.label + '</option>';
+    });
+    if (units.length > 1) { toSel.selectedIndex = 1; }
+}
+
+function calcMeasureUpdate() {
+    const win = document.querySelector('.window[data-app-id="calc"][data-template="false"]');
+    if (!win) return;
+    const typeSel = win.querySelector('[data-role="calc-measure-type"]');
+    const fromVal = win.querySelector('[data-role="calc-measure-from"]');
+    const fromUnit = win.querySelector('[data-role="calc-measure-from-unit"]');
+    const toUnit = win.querySelector('[data-role="calc-measure-to-unit"]');
+    const toVal = win.querySelector('[data-role="calc-measure-to"]');
+    if (!typeSel || !fromVal || !fromUnit || !toUnit || !toVal) return;
+
+    const type = typeSel.value;
+    const units = CALC_UNITS[type] || [];
+    const fromU = units.find(u => u.value === fromUnit.value);
+    const toU = units.find(u => u.value === toUnit.value);
+    const input = parseFloat(fromVal.value);
+
+    if (isNaN(input)) { toVal.value = ''; return; }
+
+    if (type === 'temperature') {
+        toVal.value = calcConvertTemp(input, fromU.value, toU.value);
+    } else {
+        if (!fromU || !toU) { toVal.value = ''; return; }
+        const inBase = input * fromU.factor;
+        const result = inBase / toU.factor;
+        toVal.value = String(result);
+    }
+}
+
+function calcConvertTemp(val, from, to) {
+    let celsius;
+    if (from === 'c') celsius = val;
+    else if (from === 'f') celsius = (val - 32) * 5 / 9;
+    else celsius = val - 273.15;
+
+    if (to === 'c') return String(celsius);
+    if (to === 'f') return String(celsius * 9 / 5 + 32);
+    return String(celsius + 273.15);
 }
 
 // Paint
@@ -6343,57 +8369,6 @@ function getCurrentDirContents() {
     }
 
     return node;
-}
-
-function renderExplorer() {
-    const tree = loadFileIndex();
-    const view = document.getElementById("explorerFiles");
-
-    let node = tree;
-
-    for (let name of currentFolder) {
-        const next = node.find(i => i.name === name && i.type === "folder");
-        if (!next) {
-            node = [];
-            break;
-        }
-        if (!next.children) next.children = [];
-        node = next.children;
-    }
-
-        const breadcrumb = "C:\\" + currentFolder.join("\\");
-
-    view.innerHTML = "";
-
-    if (!Array.isArray(node) || node.length === 0) {
-        view.innerHTML = `
-            <div style="color:#888;padding:6px">
-                📂 ${breadcrumb}<br><br>
-                This folder is empty
-            </div>
-        `;
-        return;
-    }
-
-    node.forEach(item => {
-        const div = document.createElement("div");
-        div.style.padding = "4px 6px";
-        div.style.cursor = "pointer";
-        div.style.color = "#ddd";
-
-        div.textContent = (item.type === "folder" ? "📁 " : "📄 ") + item.name;
-
-        div.ondblclick = () => {
-            if (item.type === "folder") {
-                currentFolder.push(item.name);
-                renderExplorer();
-            } else {
-                openFileInNotepad(item.name);
-            }
-        };
-
-        view.appendChild(div);
-    });
 }
 
 function createFolder() {
@@ -7380,6 +9355,13 @@ setInterval(() => {
 document.addEventListener('keydown', (e) => {
     if (!inBootMgr) return;
 
+    if (e.key === "Escape") {
+        SYSTEM_MODE = "normal";
+        setBootMode("normal");
+        fakeBootSequence();
+        return;
+    }
+
     if (e.key === "ArrowUp") {
         selected = (selected - 1 + bootOptions.length) % bootOptions.length;
         renderBootMenu();
@@ -7987,6 +9969,644 @@ a:hover { text-decoration: underline; }
 </html>`;
 }
 
+// ==========================================
+// NEW APP INTEGRATION LOGIC & ENGINE MODULES
+// ==========================================
+
+function initWinmine(winEl) {
+    const canvas = winEl.querySelector('.mine-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const resetBtn = winEl.querySelector('.mine-reset');
+    const countEl = winEl.querySelector('.mine-count');
+    
+    const rows = 9, cols = 9, minesCount = 10, cellSize = 20;
+    let grid = [], gameOver = false, minesPlaced = false;
+
+    const mineAccent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#ff0000';
+    const mR = parseInt(mineAccent.slice(1,3), 16), mG = parseInt(mineAccent.slice(3,5), 16), mB = parseInt(mineAccent.slice(5,7), 16);
+    function ac(a) { return 'rgba('+mR+','+mG+','+mB+','+a+')'; }
+
+    function initGrid() {
+        grid = []; gameOver = false; minesPlaced = false;
+        countEl.textContent = `Mines: ${minesCount}`;
+        for (let r = 0; r < rows; r++) {
+            grid[r] = [];
+            for (let c = 0; c < cols; c++) {
+                grid[r][c] = { r, c, isMine: false, revealed: false, flagged: false, count: 0 };
+            }
+        }
+        draw();
+    }
+
+    function placeMines(exceptR, exceptC) {
+        let placed = 0;
+        while (placed < minesCount) {
+            let r = Math.floor(Math.random() * rows);
+            let c = Math.floor(Math.random() * cols);
+            if (!grid[r][c].isMine && (Math.abs(r - exceptR) > 1 || Math.abs(c - exceptC) > 1)) {
+                grid[r][c].isMine = true;
+                placed++;
+            }
+        }
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                if (!grid[r][c].isMine) {
+                    let count = 0;
+                    for (let dr = -1; dr <= 1; dr++) {
+                        for (let dc = -1; dc <= 1; dc++) {
+                            if (grid[r+dr] && grid[r+dr][c+dc] && grid[r+dr][c+dc].isMine) count++;
+                        }
+                    }
+                    grid[r][c].count = count;
+                }
+            }
+        }
+        minesPlaced = true;
+    }
+
+    function draw() {
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                let cell = grid[r][c];
+                let x = c * cellSize;
+                let y = r * cellSize;
+                
+                ctx.strokeStyle = ac(0.3);
+                ctx.strokeRect(x, y, cellSize, cellSize);
+
+                if (cell.revealed) {
+                    ctx.fillStyle = ac(0.08);
+                    ctx.fillRect(x + 1, y + 1, cellSize - 2, cellSize - 2);
+                    if (cell.isMine) {
+                        ctx.fillStyle = ac(1);
+                        ctx.beginPath();
+                        ctx.arc(x + cellSize/2, y + cellSize/2, 5, 0, Math.PI*2);
+                        ctx.fill();
+                    } else if (cell.count > 0) {
+                        ctx.fillStyle = ac(1);
+                        ctx.font = '12px monospace';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(cell.count, x + cellSize/2, y + cellSize/2);
+                    }
+                } else {
+                    ctx.fillStyle = '#0a0a0a';
+                    ctx.fillRect(x + 1, y + 1, cellSize - 2, cellSize - 2);
+                    ctx.strokeStyle = ac(1);
+                    ctx.strokeRect(x + 2, y + 2, cellSize - 4, cellSize - 4);
+                    if (cell.flagged) {
+                        ctx.fillStyle = ac(1);
+                        ctx.font = '10px monospace';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText('F', x + cellSize/2, y + cellSize/2);
+                    }
+                }
+            }
+        }
+    }
+
+    function reveal(r, c) {
+        if (r < 0 || r >= rows || c < 0 || c >= cols || grid[r][c].revealed || grid[r][c].flagged) return;
+        if (!minesPlaced) placeMines(r, c);
+        
+        grid[r][c].revealed = true;
+        if (grid[r][c].isMine) {
+            gameOver = true;
+            countEl.textContent = 'GAME OVER';
+            revealAll();
+            return;
+        }
+        if (grid[r][c].count === 0) {
+            for (let dr = -1; dr <= 1; dr++) {
+                for (let dc = -1; dc <= 1; dc++) {
+                    reveal(r + dr, c + dc);
+                }
+            }
+        }
+        checkWin();
+    }
+
+    function revealAll() {
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                if (grid[r][c].isMine) grid[r][c].revealed = true;
+            }
+        }
+        draw();
+    }
+
+    function checkWin() {
+        let win = true;
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                if (!grid[r][c].isMine && !grid[r][c].revealed) win = false;
+            }
+        }
+        if (win) {
+            gameOver = true;
+            countEl.textContent = 'YOU WIN';
+        }
+    }
+
+    canvas.addEventListener('click', (e) => {
+        if (gameOver) return;
+        const rect = canvas.getBoundingClientRect();
+        const c = Math.floor((e.clientX - rect.left) / cellSize);
+        const r = Math.floor((e.clientY - rect.top) / cellSize);
+        reveal(r, c);
+        draw();
+    });
+
+    canvas.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        if (gameOver) return;
+        const rect = canvas.getBoundingClientRect();
+        const c = Math.floor((e.clientX - rect.left) / cellSize);
+        const r = Math.floor((e.clientY - rect.top) / cellSize);
+        if (!grid[r][c].revealed) {
+            grid[r][c].flagged = !grid[r][c].flagged;
+            draw();
+        }
+    });
+
+    resetBtn.addEventListener('click', initGrid);
+    initGrid();
+}
+
+function initSysmon(winEl) {
+    const cpuCanvas = winEl.querySelector('.cpu-chart');
+    const ramCanvas = winEl.querySelector('.ram-chart');
+    if (!cpuCanvas || !ramCanvas) return;
+    
+    const cpuCtx = cpuCanvas.getContext('2d');
+    const ramCtx = ramCanvas.getContext('2d');
+    const cpuText = winEl.querySelector('.cpu-text');
+    const ramText = winEl.querySelector('.ram-text');
+
+    // Get CSS variable color
+    const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+    const sysmonColor = accentColor || '#ff0000';
+    const smR = parseInt(sysmonColor.slice(1,3), 16), smG = parseInt(sysmonColor.slice(3,5), 16), smB = parseInt(sysmonColor.slice(5,7), 16);
+
+    let cpuHistory = new Array(26).fill(0);
+    let ramHistory = new Array(26).fill(1200); 
+    
+    function fitCanvas(c) {
+        const rect = c.getBoundingClientRect();
+        if (c.width !== rect.width || c.height !== rect.height) {
+            c.width = rect.width;
+            c.height = rect.height;
+        }
+    }
+
+    function updateMetrics() {
+        fitCanvas(cpuCanvas);
+        fitCanvas(ramCanvas);
+        // Use telemetry system if available, otherwise fall back to window counting
+        let baseCpu = 0, baseRam = 0;
+        if (window.AT_SystemMetrics && window.AT_SystemMetrics.spikeCpu) {
+            baseCpu = Math.min(100, 35 + window.AT_SystemMetrics.spikeCpu + Math.floor(Math.random() * 15));
+            baseRam = Math.min(4096, 405 + window.AT_SystemMetrics.spikeRam + Math.floor(Math.random() * 30));
+        } else {
+            let activeWindows = document.querySelectorAll('.window[data-template="false"]').length;
+            baseCpu = activeWindows * 8 + Math.floor(Math.random() * 12);
+            baseRam = 1024 + (activeWindows * 140) + Math.floor(Math.random() * 45);
+        }
+        if (baseCpu > 100) baseCpu = 100;
+        if (baseRam > 4096) baseRam = 4096;
+        cpuText.textContent = `${baseCpu}%`;
+        cpuHistory.push(baseCpu);
+        cpuHistory.shift();
+        ramText.textContent = `${baseRam}MB / 4096MB`;
+        ramHistory.push(baseRam);
+        ramHistory.shift();
+        renderGraph(cpuCtx, cpuCanvas, cpuHistory, 100);
+        renderGraph(ramCtx, ramCanvas, ramHistory, 4096);
+    }
+
+    function renderGraph(ctx, canvas, data, maxVal) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = 'rgba('+smR+','+smG+','+smB+',0.15)';
+        ctx.lineWidth = 1;
+        for (let i = 10; i < canvas.height; i += 15) {
+            ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(canvas.width, i); ctx.stroke();
+        }
+        for (let i = 10; i < canvas.width; i += 20) {
+            ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
+        }
+
+        ctx.strokeStyle = sysmonColor;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        let step = canvas.width / (data.length - 1);
+        for (let i = 0; i < data.length; i++) {
+            let ratio = data[i] / maxVal;
+            let x = i * step;
+            let y = canvas.height - (ratio * (canvas.height - 4)) - 2;
+            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+    }
+
+    const intervalId = setInterval(updateMetrics, 500);
+    
+    const observer = new MutationObserver(() => {
+        if (!document.body.contains(winEl)) {
+            clearInterval(intervalId);
+            observer.disconnect();
+        }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    
+    updateMetrics();
+}
+
+function initAtamp(winEl) {
+    const canvas = winEl.querySelector('.audio-canvas');
+    const toggleBtn = winEl.querySelector('.audio-toggle');
+    if (!canvas || !toggleBtn) return;
+    const ctx = canvas.getContext('2d');
+    
+    // Get CSS variable color
+    const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+    const atampColor = accentColor || '#ff0000';
+    
+    let audioCtx = null, oscillator = null, gainNode = null, analyser = null, lfo = null, lfoGain = null;
+    let isPlaying = false;
+
+    function startSynth() {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 256;
+        
+        oscillator = audioCtx.createOscillator();
+        gainNode = audioCtx.createGain();
+        
+        oscillator.type = 'sawtooth';
+        oscillator.frequency.setValueAtTime(90, audioCtx.currentTime); 
+        
+        lfo = audioCtx.createOscillator();
+        lfoGain = audioCtx.createGain();
+        lfo.type = 'sine';
+        lfo.frequency.value = 3; 
+        lfoGain.gain.value = 15;
+        lfo.connect(lfoGain);
+        lfoGain.connect(oscillator.frequency);
+        
+        gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime); 
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(analyser);
+        analyser.connect(audioCtx.destination);
+        
+        oscillator.start();
+        lfo.start();
+        isPlaying = true;
+        toggleBtn.textContent = "[STOP AUDIO]";
+        renderWave();
+    }
+
+    function stopSynth() {
+        if (oscillator) {
+            try { oscillator.stop(); } catch(e){}
+            oscillator.disconnect();
+        }
+        if (lfo) {
+            try { lfo.stop(); } catch(e){}
+            lfo.disconnect();
+        }
+        if (audioCtx) {
+            try { audioCtx.close(); } catch(e){}
+        }
+        isPlaying = false;
+        toggleBtn.textContent = "GENERATE SYNTH WAVE";
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function renderWave() {
+        if (!isPlaying) return;
+        requestAnimationFrame(renderWave);
+
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+        analyser.getByteTimeDomainData(dataArray);
+
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = atampColor;
+        ctx.beginPath();
+
+        const sliceWidth = canvas.width / bufferLength;
+        let x = 0;
+
+        for (let i = 0; i < bufferLength; i++) {
+            const v = dataArray[i] / 128.0;
+            const y = (v * canvas.height) / 2;
+            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            x += sliceWidth;
+        }
+
+        ctx.lineTo(canvas.width, canvas.height / 2);
+        ctx.stroke();
+    }
+
+    toggleBtn.addEventListener('click', () => {
+        if (isPlaying) stopSynth(); else startSynth();
+    });
+
+    const observer = new MutationObserver(() => {
+        if (!document.body.contains(winEl)) {
+            stopSynth();
+            observer.disconnect();
+        }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+}
+
+function initMatrix(winEl) {
+    const canvas = winEl.querySelector('.matrix-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    // Get CSS variable color
+    const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+    const matrixColor = accentColor || '#ff0000';
+
+    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*()<>[]{}+=-_";
+    const alphabet = letters.split("");
+    const fontSize = 11;
+    let columns = 0, rainDrops = [];
+
+    function resizeCanvas() {
+        const rect = canvas.parentElement.getBoundingClientRect();
+        const newWidth = rect.width || 280;
+        const newHeight = rect.height || 200;
+        if (canvas.width === newWidth && canvas.height === newHeight) return;
+        canvas.width = newWidth;
+        canvas.height = newHeight;
+        const newCols = Math.floor(canvas.width / fontSize) + 1;
+        if (newCols > columns) {
+            while (rainDrops.length < newCols) rainDrops.push(Math.floor(Math.random() * (canvas.height / fontSize)));
+        } else if (newCols < columns) {
+            rainDrops.length = newCols;
+        }
+        columns = newCols;
+    }
+    resizeCanvas();
+
+    // Re-check canvas size after first paint in case layout wasn't ready
+    requestAnimationFrame(() => { resizeCanvas(); });
+
+    function drawMatrix() {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        ctx.fillStyle = matrixColor;
+        ctx.font = fontSize + 'px monospace';
+
+        for (let i = 0; i < rainDrops.length; i++) {
+            const text = alphabet[Math.floor(Math.random() * alphabet.length)];
+            const x = i * fontSize;
+            const y = rainDrops[i] * fontSize;
+            
+            ctx.fillText(text, x, y);
+            
+            if (y > canvas.height && Math.random() > 0.975) {
+                rainDrops[i] = 0;
+            }
+            rainDrops[i]++;
+        }
+    }
+
+    const intervalId = setInterval(drawMatrix, 40);
+    const resizeInterval = setInterval(resizeCanvas, 1000);
+
+    const observer = new MutationObserver(() => {
+        if (!document.body.contains(winEl)) {
+            clearInterval(intervalId);
+            clearInterval(resizeInterval);
+            observer.disconnect();
+        }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+}
+
+function initMediaMinesweeper(mediaContainerWin) {
+    const container = mediaContainerWin.querySelector('.atmedia-winmine-container');
+    if (!container) {
+        // Create the minesweeper container if it doesn't exist
+        const content = mediaContainerWin.querySelector('.content') || mediaContainerWin.querySelector('[class*="content"]');
+        if (!content) return;
+        
+        const newContainer = document.createElement('div');
+        newContainer.className = 'atmedia-winmine-container';
+        newContainer.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:8px;padding:8px;background:#050505;height:100%;justify-content:center;';
+        
+        const canvas = document.createElement('canvas');
+        canvas.className = 'mine-canvas';
+        canvas.width = 180;
+        canvas.height = 180;
+        canvas.style.cssText = 'border:1px solid var(--accent-border);background:#000;';
+        
+        const countEl = document.createElement('div');
+        countEl.className = 'mine-count';
+        countEl.style.cssText = 'font-family:monospace;font-size:12px;color:#aaa;';
+        countEl.textContent = 'Mines: 10';
+        
+        const resetBtn = document.createElement('button');
+        resetBtn.className = 'mine-reset';
+        resetBtn.style.cssText = 'padding:6px 12px;background:var(--accent-soft);border:1px solid var(--accent-border);color:#fff;font-family:monospace;font-size:11px;cursor:pointer;';
+        resetBtn.textContent = 'NEW GAME';
+        
+        newContainer.appendChild(canvas);
+        newContainer.appendChild(countEl);
+        newContainer.appendChild(resetBtn);
+        content.innerHTML = '';
+        content.appendChild(newContainer);
+    }
+    
+    const canvas = mediaContainerWin.querySelector('.mine-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const resetBtn = mediaContainerWin.querySelector('.mine-reset');
+    const countEl = mediaContainerWin.querySelector('.mine-count');
+    
+    const rows = 9, cols = 9, minesCount = 10, cellSize = 20;
+    let grid = [], gameOver = false, minesPlaced = false;
+
+    const mmAccent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#ff0000';
+    const mmR = parseInt(mmAccent.slice(1,3), 16), mmG = parseInt(mmAccent.slice(3,5), 16), mmB = parseInt(mmAccent.slice(5,7), 16);
+
+    function initGrid() {
+        grid = []; gameOver = false; minesPlaced = false;
+        countEl.textContent = `Mines: ${minesCount}`;
+        for (let r = 0; r < rows; r++) {
+            grid[r] = [];
+            for (let c = 0; c < cols; c++) {
+                grid[r][c] = { r, c, isMine: false, revealed: false, flagged: false, count: 0 };
+            }
+        }
+        draw();
+    }
+
+    function placeMines(exceptR, exceptC) {
+        let placed = 0;
+        while (placed < minesCount) {
+            let r = Math.floor(Math.random() * rows);
+            let c = Math.floor(Math.random() * cols);
+            if (!grid[r][c].isMine && (Math.abs(r - exceptR) > 1 || Math.abs(c - exceptC) > 1)) {
+                grid[r][c].isMine = true;
+                placed++;
+            }
+        }
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                if (!grid[r][c].isMine) {
+                    let count = 0;
+                    for (let dr = -1; dr <= 1; dr++) {
+                        for (let dc = -1; dc <= 1; dc++) {
+                            if (grid[r+dr] && grid[r+dr][c+dc] && grid[r+dr][c+dc].isMine) count++;
+                        }
+                    }
+                    grid[r][c].count = count;
+                }
+            }
+        }
+        minesPlaced = true;
+    }
+
+    function draw() {
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                let cell = grid[r][c];
+                let x = c * cellSize;
+                let y = r * cellSize;
+                
+                ctx.strokeStyle = 'rgba('+mmR+','+mmG+','+mmB+',0.3)';
+                ctx.strokeRect(x, y, cellSize, cellSize);
+
+                if (cell.revealed) {
+                    ctx.fillStyle = 'rgba('+mmR+','+mmG+','+mmB+',0.08)';
+                    ctx.fillRect(x + 1, y + 1, cellSize - 2, cellSize - 2);
+                    if (cell.isMine) {
+                        ctx.fillStyle = 'rgba('+mmR+','+mmG+','+mmB+',1)';
+                        ctx.beginPath();
+                        ctx.arc(x + cellSize/2, y + cellSize/2, 5, 0, Math.PI*2);
+                        ctx.fill();
+                    } else if (cell.count > 0) {
+                        ctx.fillStyle = 'rgba('+mmR+','+mmG+','+mmB+',1)';
+                        ctx.font = '12px monospace';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(cell.count, x + cellSize/2, y + cellSize/2);
+                    }
+                } else {
+                    ctx.fillStyle = '#0a0a0a';
+                    ctx.fillRect(x + 1, y + 1, cellSize - 2, cellSize - 2);
+                    ctx.strokeStyle = 'rgba('+mmR+','+mmG+','+mmB+',1)';
+                    ctx.strokeRect(x + 2, y + 2, cellSize - 4, cellSize - 4);
+                    if (cell.flagged) {
+                        ctx.fillStyle = 'rgba('+mmR+','+mmG+','+mmB+',1)';
+                        ctx.font = '10px monospace';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText('F', x + cellSize/2, y + cellSize/2);
+                    }
+                }
+            }
+        }
+    }
+
+    function reveal(r, c) {
+        if (r < 0 || r >= rows || c < 0 || c >= cols || grid[r][c].revealed || grid[r][c].flagged) return;
+        if (!minesPlaced) placeMines(r, c);
+        
+        grid[r][c].revealed = true;
+        if (grid[r][c].isMine) {
+            gameOver = true;
+            countEl.textContent = 'GAME OVER';
+            revealAll();
+            return;
+        }
+        if (grid[r][c].count === 0) {
+            for (let dr = -1; dr <= 1; dr++) {
+                for (let dc = -1; dc <= 1; dc++) {
+                    reveal(r + dr, c + dc);
+                }
+            }
+        }
+        checkWin();
+        draw();
+    }
+
+    function revealAll() {
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                if (grid[r][c].isMine) grid[r][c].revealed = true;
+            }
+        }
+        draw();
+    }
+
+    function checkWin() {
+        let win = true;
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                if (!grid[r][c].isMine && !grid[r][c].revealed) win = false;
+            }
+        }
+        if (win) {
+            gameOver = true;
+            countEl.textContent = 'YOU WIN!';
+            draw();
+        }
+    }
+
+    canvas.addEventListener('click', (e) => {
+        if (gameOver) return;
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const c = Math.floor(x / cellSize);
+        const r = Math.floor(y / cellSize);
+        if (r >= 0 && r < rows && c >= 0 && c < cols) {
+            reveal(r, c);
+        }
+    });
+
+    canvas.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        if (gameOver) return;
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const c = Math.floor(x / cellSize);
+        const r = Math.floor(y / cellSize);
+        if (r >= 0 && r < rows && c >= 0 && c < cols && !grid[r][c].revealed) {
+            grid[r][c].flagged = !grid[r][c].flagged;
+            draw();
+        }
+    });
+
+    resetBtn.addEventListener('click', initGrid);
+    
+    const observer = new MutationObserver(() => {
+        if (!document.body.contains(mediaContainerWin)) {
+            observer.disconnect();
+        }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    
+    initGrid();
+}
+
 </script>
 
 <div id="desktopMenu" style="
@@ -8040,7 +10660,7 @@ Themes
         <img data-role="themes-wallpaper-thumb" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:5px;" alt="wallpaper preview">
       </div>
       <div style="display:flex;gap:8px;">
-        <button class="themes-btn-primary" onclick="this.closest('.window').querySelector('[data-role=\"themes-wallpaper-input\"]').click()">Import Wallpaper</button>
+        <button class="themes-btn-primary" onclick="this.closest('.window').querySelector('[data-role=&quot;themes-wallpaper-input&quot;]').click()">Import Wallpaper</button>
         <button class="themes-btn-secondary" onclick="themesRemoveWallpaper()">Remove</button>
       </div>
       <input type="file" data-role="themes-wallpaper-input" accept="image/*" style="display:none;" onchange="themesLoadWallpaper(event)">
@@ -8067,7 +10687,7 @@ Themes
           <img data-role="themes-lockscreen-thumb" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:5px;" alt="lock screen preview">
         </div>
         <div style="display:flex;gap:8px;margin-bottom:14px;">
-          <button class="themes-btn-primary" onclick="this.closest('.window').querySelector('[data-role=\"themes-lockscreen-input\"]').click()">Import Wallpaper</button>
+          <button class="themes-btn-primary" onclick="this.closest('.window').querySelector('[data-role=&quot;themes-lockscreen-input&quot;]').click()">Import Wallpaper</button>
           <button class="themes-btn-secondary" onclick="themesRemoveLockScreenWallpaper()">Remove</button>
         </div>
         <input type="file" data-role="themes-lockscreen-input" accept="image/*" style="display:none;" onchange="themesLoadLockScreenWallpaper(event)">
@@ -8180,6 +10800,20 @@ Themes
           </div>
           <input type="range" data-role="button-opacity-slider" min="0" max="100" value="0" style="width:100%;accent-color:var(--accent);" oninput="themesUpdateButtonOpacity(this.value, this)">
           <div style="font-size:10px;color:#555;margin-top:4px;" data-role="button-opacity-hint">Disabled while button transparency is off.</div>
+        </div>
+        <div style="height:1px;background:rgba(255,255,255,0.08);"></div>
+        <div>
+          <div class="themes-section-title" style="font-size:12px;font-weight:500;color:#fff;margin-bottom:8px;">Start Button Icon</div>
+          <div style="font-size:10px;color:#888;margin-bottom:8px;">Upload a 1:1 image to replace the start button icon.</div>
+          <div data-role="start-icon-preview" style="width:42px;height:42px;border-radius:50%;border:1px solid rgba(255,255,255,0.12);background:#0a0a0a;display:flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:8px;">
+            <span data-role="start-icon-label" style="color:#555;font-size:14px;">A</span>
+            <img data-role="start-icon-thumb" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="start icon preview">
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="themes-btn-primary" onclick="this.closest('.window').querySelector('[data-role=&quot;start-icon-input&quot;]').click()">Import Icon</button>
+            <button class="themes-btn-secondary" onclick="themesRemoveStartIcon()">Remove</button>
+          </div>
+          <input type="file" data-role="start-icon-input" accept="image/*" style="display:none;" onchange="themesLoadStartIcon(event)">
         </div>
       </div>
     </div>
@@ -8353,6 +10987,243 @@ Themes
 }
 </style>
 
+<!-- CONTROL PANEL APP TEMPLATE -->
+<div id="controlpanel" data-app-id="controlpanel" data-template="true" class="window window-template" style="width:640px;height:440px;">
+<div class="titlebar" onmousedown="dragStart(event,this.parentElement)">
+Control Panel
+<div class="win-btns">
+<div class="btn" onclick="minimize(this)">_</div>
+<div class="btn" onclick="maximize(this)">□</div>
+<div class="btn" onclick="closeWin(this)">X</div>
+</div>
+</div>
+<div class="content" style="padding:0;display:flex;flex-direction:row;height:calc(100% - 30px);overflow:hidden;background:rgba(0,0,0,0.35);">
+
+    <!-- Left nav bar -->
+    <div class="cp-nav">
+        <div class="cp-nav-header">Control Panel</div>
+        <div class="cp-nav-item active" data-cp-section="main" onclick="cpNav(this,'main')">Home</div>
+        <div class="cp-nav-item" data-cp-section="appearance" onclick="cpNav(this,'appearance')">Appearance</div>
+        <div class="cp-nav-item" data-cp-section="system" onclick="cpNav(this,'system')">System</div>
+        <div class="cp-nav-item" data-cp-section="programs" onclick="cpNav(this,'programs')">Programs</div>
+        <div class="cp-nav-item" data-cp-section="clock" onclick="cpNav(this,'clock')">Clock &amp; Region</div>
+    </div>
+
+    <!-- Content area -->
+    <div class="cp-body">
+
+        <!-- HOME / CATEGORY GRID -->
+        <div class="cp-section active" id="cp-section-main">
+            <div class="cp-section-title">Control Panel</div>
+            <div class="cp-section-desc">Adjust your computer's settings.</div>
+            <div class="cp-grid">
+                <div class="cp-grid-item" onclick="cpNav(this,'appearance')">
+                    <span class="cp-grid-icon">🎨</span>
+                    <span class="cp-grid-label">Appearance</span>
+                    <span class="cp-grid-desc">Themes, wallpaper, lock screen</span>
+                </div>
+                <div class="cp-grid-item" onclick="cpNav(this,'system')">
+                    <span class="cp-grid-icon">💻</span>
+                    <span class="cp-grid-label">System</span>
+                    <span class="cp-grid-desc">Storage, backup, reset</span>
+                </div>
+                <div class="cp-grid-item" onclick="cpNav(this,'programs')">
+                    <span class="cp-grid-icon">📦</span>
+                    <span class="cp-grid-label">Programs</span>
+                    <span class="cp-grid-desc">Sandbox URL, default apps</span>
+                </div>
+                <div class="cp-grid-item" onclick="cpNav(this,'clock')">
+                    <span class="cp-grid-icon">🕐</span>
+                    <span class="cp-grid-label">Clock &amp; Region</span>
+                    <span class="cp-grid-desc">Time zone, date format</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- APPEARANCE -->
+        <div class="cp-section" id="cp-section-appearance">
+            <div class="cp-section-title" style="display:flex;align-items:center;gap:8px;">
+                <span onclick="cpNav(this,'main')" style="cursor:pointer;font-size:16px;color:var(--accent);">←</span>
+                Appearance
+            </div>
+            <div class="cp-section-desc">Manage themes, wallpaper, and lock screen settings.</div>
+            <div style="margin-top:14px;display:flex;flex-direction:column;gap:8px;">
+                <div class="cp-link-btn" onclick="toggleStartMenu(); openApp('themes');">
+                    <span style="font-weight:600;">Themes &amp; Wallpaper</span>
+                    <span style="font-size:11px;color:#999;">Change accent color, wallpaper, lock screen</span>
+                </div>
+                <div class="cp-link-btn" onclick="cpOpenTransparency()">
+                    <span style="font-weight:600;">Transparency Effects</span>
+                    <span style="font-size:11px;color:#999;">Toggle glass/blur on windows and taskbar</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- SYSTEM -->
+        <div class="cp-section" id="cp-section-system">
+            <div class="cp-section-title" style="display:flex;align-items:center;gap:8px;">
+                <span onclick="cpNav(this,'main')" style="cursor:pointer;font-size:16px;color:var(--accent);">←</span>
+                System
+            </div>
+            <div class="cp-section-desc">Storage management, backup, and OS reset.</div>
+            <div style="margin-top:14px;display:flex;flex-direction:column;gap:8px;">
+                <div class="cp-link-btn" onclick="toggleStartMenu(); openApp('sysmon');">
+                    <span style="font-weight:600;">System Monitor</span>
+                    <span style="font-size:11px;color:#999;">View system metrics and runtime information</span>
+                </div>
+                <div class="cp-link-btn" onclick="toggleStartMenu(); openApp('localstr');">
+                    <span style="font-weight:600;">LocalSTR Storage Manager</span>
+                    <span style="font-size:11px;color:#999;">Export, import, or reset local storage</span>
+                </div>
+                <div class="cp-link-btn" onclick="cpOpenRestart()">
+                    <span style="font-weight:600;">Restart</span>
+                    <span style="font-size:11px;color:#999;">Reboot the desktop environment</span>
+                </div>
+                <div class="cp-link-btn" onclick="cpOpenShutdown()">
+                    <span style="font-weight:600;">Shutdown</span>
+                    <span style="font-size:11px;color:#999;">Shut down the desktop</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- PROGRAMS -->
+        <div class="cp-section" id="cp-section-programs">
+            <div class="cp-section-title" style="display:flex;align-items:center;gap:8px;">
+                <span onclick="cpNav(this,'main')" style="cursor:pointer;font-size:16px;color:var(--accent);">←</span>
+                Programs
+            </div>
+            <div class="cp-section-desc">Configure program settings and default URLs.</div>
+            <div style="margin-top:14px;display:flex;flex-direction:column;gap:12px;">
+                <div style="font-size:12px;font-weight:600;color:#fff;">Sandbox Environment URL</div>
+                <div style="font-size:11px;color:#999;">Set the URL loaded inside the Sandbox app.</div>
+                <div style="display:flex;gap:8px;">
+                    <input type="text" id="cp-sandbox-url" data-role="cp-sandbox-url" style="flex:1;background:#111;border:1px solid #333;color:#ccc;padding:6px 10px;border-radius:4px;font-size:12px;font-family:inherit;" placeholder="https://atbox.pages.dev/">
+                    <button class="themes-btn-primary" onclick="cpSaveSandboxUrl()">Save</button>
+                </div>
+                <div id="cp-sandbox-msg" style="font-size:10px;color:#666;display:none;"></div>
+
+                <div style="height:1px;background:rgba(255,255,255,0.08);margin:8px 0;"></div>
+
+                <div style="font-size:12px;font-weight:600;color:#fff;">Default File Apps</div>
+                <div style="font-size:11px;color:#999;">Configure which app opens certain file types.</div>
+                <div style="font-size:11px;color:#666;font-style:italic;">Coming soon.</div>
+            </div>
+        </div>
+
+        <!-- CLOCK & REGION -->
+        <div class="cp-section" id="cp-section-clock">
+            <div class="cp-section-title" style="display:flex;align-items:center;gap:8px;">
+                <span onclick="cpNav(this,'main')" style="cursor:pointer;font-size:16px;color:var(--accent);">←</span>
+                Clock &amp; Region
+            </div>
+            <div class="cp-section-desc">Time zone display and regional settings.</div>
+            <div style="margin-top:14px;display:flex;flex-direction:column;gap:8px;">
+                <div class="cp-link-btn">
+                    <span style="font-weight:600;">Date &amp; Time</span>
+                    <span style="font-size:11px;color:#999;">Taskbar clock and calendar settings</span>
+                </div>
+                <div class="cp-link-btn">
+                    <span style="font-weight:600;">Region Format</span>
+                    <span style="font-size:11px;color:#999;">Number, date, and display format preferences</span>
+                </div>
+                <div style="font-size:11px;color:#666;font-style:italic;">Coming soon.</div>
+            </div>
+        </div>
+
+    </div>
+</div>
+<div class="resizer"></div>
+</div>
+
+<style>
+/* Control Panel */
+.cp-nav {
+    width: 160px;
+    flex: 0 0 160px;
+    background: rgba(0,0,0,0.4);
+    border-right: 1px solid rgba(255,255,255,0.08);
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    overflow-y: auto;
+}
+.cp-nav-header {
+    padding: 14px 14px 10px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.3px;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    margin-bottom: 4px;
+}
+.cp-nav-item {
+    padding: 9px 14px;
+    font-size: 11.5px;
+    color: #aaa;
+    cursor: pointer;
+    border-left: 3px solid transparent;
+    transition: background 0.12s, color 0.12s;
+    user-select: none;
+}
+.cp-nav-item:hover { background: rgba(255,255,255,0.06); color: #ddd; }
+.cp-nav-item.active { background: rgba(255,255,255,0.10); color: #fff; border-left-color: var(--accent); }
+.cp-body {
+    flex: 1;
+    min-width: 0;
+    padding: 16px 18px;
+    overflow-y: auto;
+    position: relative;
+}
+.cp-section { display: none; }
+.cp-section.active { display: block; }
+.cp-section-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 4px;
+}
+.cp-section-desc {
+    font-size: 11px;
+    color: #888;
+    margin-bottom: 8px;
+}
+.cp-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 14px;
+}
+.cp-grid-item {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 6px;
+    padding: 14px;
+    cursor: pointer;
+    transition: background 0.13s, border-color 0.13s;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.cp-grid-item:hover { background: rgba(255,255,255,0.09); border-color: var(--accent-border); }
+.cp-grid-icon { font-size: 22px; }
+.cp-grid-label { font-size: 12px; font-weight: 600; color: #eee; }
+.cp-grid-desc { font-size: 10px; color: #888; }
+.cp-link-btn {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 5px;
+    padding: 10px 14px;
+    cursor: pointer;
+    transition: background 0.12s, border-color 0.12s;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 12px;
+    color: #ddd;
+}
+.cp-link-btn:hover { background: rgba(255,255,255,0.08); border-color: var(--accent-border); }
+</style>
+
 <!-- SANDBOX APP TEMPLATE -->
 <div id="sandbox" data-app-id="sandbox" data-template="true" class="window window-template" style="width:800px;height:600px;">
 <div class="titlebar" onmousedown="dragStart(event,this.parentElement)">
@@ -8365,9 +11236,9 @@ Sandbox - Virtual Environment
 </div>
 <div class="content" style="padding:0;display:flex;flex-direction:column;">
     <div style="padding:10px;background:#111;border-bottom:1px solid #333;font-size:12px;color:#ccc;">
-        <strong>Sandbox Environment</strong> - Isolated iframe instance connecting to atbox.pages.dev
+        <strong>Sandbox Environment</strong> - Isolated iframe instance
         <div style="margin-top:5px;font-size:11px;color:#888;">
-            This creates a virtual machine-like environment within AT Box. Each sandbox is independent and can be opened infinitely.
+            The target URL can be changed from Control Panel → Programs.
         </div>
     </div>
     <iframe src="https://atbox.pages.dev/" style="flex:1;border:none;width:100%;height:100%;background:#000;" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-pointer-lock allow-top-navigation"></iframe>
@@ -8376,6 +11247,63 @@ Sandbox - Virtual Environment
 </div>
 
 <script>
+// ---- CONTROL PANEL APP ----
+
+function cpNav(el, section) {
+    const win = el.closest('.window');
+    win.querySelectorAll('.cp-nav-item').forEach(n => n.classList.remove('active'));
+    el.classList.add('active');
+    win.querySelectorAll('.cp-section').forEach(s => s.classList.remove('active'));
+    const target = win.querySelector('#cp-section-' + section);
+    if (target) target.classList.add('active');
+    // Load sandbox URL when navigating to programs section
+    if (section === 'programs') {
+        const input = win.querySelector('[data-role="cp-sandbox-url"]');
+        if (input) {
+            const saved = localStorage.getItem('atbox_sandbox_url');
+            input.value = saved || 'https://atbox.pages.dev/';
+        }
+    }
+}
+
+function cpSaveSandboxUrl() {
+    const win = document.querySelector('.window[data-app-id="controlpanel"][data-template="false"]');
+    if (!win) return;
+    const input = win.querySelector('[data-role="cp-sandbox-url"]');
+    if (!input) return;
+    const url = input.value.trim() || 'https://atbox.pages.dev/';
+    localStorage.setItem('atbox_sandbox_url', url);
+    const msg = win.querySelector('#cp-sandbox-msg');
+    if (msg) {
+        msg.textContent = 'Sandbox URL saved.';
+        msg.style.display = 'block';
+        msg.style.color = '#4caf50';
+        setTimeout(() => { msg.style.display = 'none'; }, 2500);
+    }
+}
+
+function cpOpenTransparency() {
+    toggleStartMenu();
+    openApp('themes');
+    setTimeout(() => {
+        const tw = document.querySelector('.window[data-app-id="themes"][data-template="false"]');
+        if (tw) {
+            const nav = tw.querySelector('.themes-nav-item[data-section="transparency"]');
+            if (nav) nav.click();
+        }
+    }, 200);
+}
+
+function cpOpenRestart() {
+    toggleStartMenu();
+    startRestart(0);
+}
+
+function cpOpenShutdown() {
+    toggleStartMenu();
+    startShutdown(0);
+}
+
 // ---- THEMES APP ----
 
 function themesHighlightPreset(el) {
@@ -8431,8 +11359,8 @@ function themesApplyWallpaper() {
     }
 }
 
-function themesApplyWallpaperFit() {
-    const fit = document.getElementById('themes-wallpaper-fit').value;
+function themesApplyWallpaperFit(el) {
+    const fit = el ? el.value : document.querySelector('[data-role="themes-wallpaper-fit"]').value;
     localStorage.setItem('atbox_wallpaper_fit', fit);
     themesApplyWallpaper();
 }
@@ -8454,6 +11382,60 @@ function themesRefreshWallpaperPreview() {
             thumb.style.display = 'block';
             label.style.display = 'none';
         } else {
+            thumb.style.display = 'none';
+            label.style.display = '';
+        }
+    });
+}
+
+// ---- START BUTTON ICON ----
+function themesLoadStartIcon(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+        const dataUrl = ev.target.result;
+        localStorage.setItem('atbox_start_icon', dataUrl);
+        themesApplyStartIcon();
+        themesRefreshStartIconPreview();
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+}
+
+function themesApplyStartIcon() {
+    const dataUrl = localStorage.getItem('atbox_start_icon');
+    const btn = document.querySelector('.start-btn');
+    if (!btn) return;
+    if (dataUrl) {
+        btn.style.background = `url("${dataUrl}") center/cover no-repeat`;
+        btn.style.color = 'transparent';
+        btn.style.textShadow = 'none';
+        btn.style.fontSize = '0';
+    } else {
+        btn.style.background = '';
+        btn.style.color = 'white';
+        btn.style.textShadow = '0 1px 2px rgba(0,0,0,0.75)';
+        btn.style.fontSize = '18px';
+    }
+}
+
+function themesRemoveStartIcon() {
+    localStorage.removeItem('atbox_start_icon');
+    themesApplyStartIcon();
+    themesRefreshStartIconPreview();
+}
+
+function themesRefreshStartIconPreview() {
+    document.querySelectorAll('.window[data-app-id="themes"][data-template="false"]').forEach(win => {
+        const dataUrl = localStorage.getItem('atbox_start_icon');
+        const thumb = win.querySelector('[data-role="start-icon-thumb"]');
+        const label = win.querySelector('[data-role="start-icon-label"]');
+        if (dataUrl && thumb && label) {
+            thumb.src = dataUrl;
+            thumb.style.display = 'block';
+            label.style.display = 'none';
+        } else if (thumb && label) {
             thumb.style.display = 'none';
             label.style.display = '';
         }
@@ -8715,7 +11697,8 @@ function themesToggleDeleteMode(btn) {
 
 // ---- TRANSPARENCY ----
 let atboxTransparency = localStorage.getItem('atbox_transparency') !== 'off';
-let atboxOpacity = parseInt(localStorage.getItem('atbox_opacity') || '50');
+let atboxOpacity = parseInt(localStorage.getItem('atbox_opacity') ?? '50', 10);
+if (Number.isNaN(atboxOpacity)) atboxOpacity = 50;
 
 // ---- FIRST LAUNCH DEFAULTS ----
 (function applyFirstLaunchDefaults() {
@@ -8777,6 +11760,24 @@ function themesApplyTransparency() {
     }
 }
 
+function themesUpdateOpacity(val, sliderEl) {
+    atboxOpacity = parseInt(val, 10);
+    if (Number.isNaN(atboxOpacity)) {
+        atboxOpacity = 50;
+    }
+    localStorage.setItem('atbox_opacity', atboxOpacity);
+    if (sliderEl) {
+        const win = sliderEl.closest('.window');
+        if (win) {
+            const label = win.querySelector('[data-role="opacity-label"]');
+            if (label) label.innerHTML = `Transparency Level: <b>${atboxOpacity}%</b>`;
+        }
+    }
+    if (atboxTransparency) {
+        themesApplyTransparency();
+    }
+}
+
 function themesUpdateButtonOpacity(val, sliderEl) {
     atboxButtonOpacity = parseInt(val);
     localStorage.setItem('atbox_button_opacity', atboxButtonOpacity);
@@ -8832,15 +11833,15 @@ function themesApplyLockScreenWallpaper() {
     const lockscreen = document.getElementById('loginScreen');
     if (!lockscreen) return;
     if (dataUrl) {
-        lockscreen.style.backgroundImage = `url("${dataUrl}") !important`;
-        lockscreen.style.backgroundSize = 'cover !important';
-        lockscreen.style.backgroundPosition = 'center !important';
-        lockscreen.style.backgroundRepeat = 'no-repeat !important';
+        lockscreen.style.setProperty('background-image', `url("${dataUrl}")`, 'important');
+        lockscreen.style.setProperty('background-size', 'cover', 'important');
+        lockscreen.style.setProperty('background-position', 'center', 'important');
+        lockscreen.style.setProperty('background-repeat', 'no-repeat', 'important');
     } else {
-        lockscreen.style.backgroundImage = 'url(\'assets/oobewl.png\') !important';
-        lockscreen.style.backgroundSize = 'cover !important';
-        lockscreen.style.backgroundPosition = 'center !important';
-        lockscreen.style.backgroundRepeat = 'no-repeat !important';
+        lockscreen.style.setProperty('background-image', 'url("assets/oobewl.png")', 'important');
+        lockscreen.style.setProperty('background-size', 'cover', 'important');
+        lockscreen.style.setProperty('background-position', 'center', 'important');
+        lockscreen.style.setProperty('background-repeat', 'no-repeat', 'important');
     }
 }
 
@@ -8951,6 +11952,7 @@ function themesUpdateButtonTransparencyUI() {
 (function themesBootApply() {
     themesApplyWallpaper();
     themesApplyLockScreenWallpaper();
+    themesApplyStartIcon();
     themesApplyTransparency();
     themesApplyLoginButtonStyle();
     themesApplyButtonTransparency();
@@ -8962,6 +11964,7 @@ function themesUpdateButtonTransparencyUI() {
             setTimeout(() => {
                 themesRefreshWallpaperPreview();
                 themesRefreshLockScreenPreview();
+                themesRefreshStartIconPreview();
                 themesUpdateLoginButtonUI();
                 themesUpdateButtonTransparencyUI();
                 const wf = localStorage.getItem('atbox_wallpaper_fit');
@@ -8977,3 +11980,4 @@ function themesUpdateButtonTransparencyUI() {
 
 </body>
 </html>
+
