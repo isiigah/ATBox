@@ -12,7 +12,7 @@ Age: ~3 Months old Project (as of June 5, 2026)
 
 Foundation: 17/03/2026
 
-This project is based on a Web OS, which means you can download it and launch it on just come clicks!
+This project is based on a Web OS, which means you can download it and launch it on just some clicks!
 I would be purposely not be putting help here because it's meant to be explored.
 
 43 6E 70 78 6E 74 72 20 5A 6E 61 6E 74 72 65 20 59 76 6F 65 6E 65 6C
