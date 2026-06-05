@@ -14,6 +14,7 @@ I would be purposely not be putting help here because it's meant to be explored.
 43 6E 70 78 6E 74 72 20 5A 6E 61 6E 74 72 65 20 59 76 6F 65 6E 65 6C
 
 **HOW DO YOU FIND HELP?**
+
 I won't be putting much help here or it will ruin the experience, but here is the basics:
 
 * Boot Sequence
@@ -61,5 +62,7 @@ I won't be putting much help here or it will ruin the experience, but here is th
 ... more will be coming soon
 
 **MULTI-OS**
+
 This is not just one OS, it's multiple
+
 At the POST screen, you need to press F5 to open the boot menu to choose other operating systems
