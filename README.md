@@ -3,9 +3,13 @@
 **Created by isiigah/Starfish**
 
 INFO:
+
 Creator: Starfish
+
 Is Vibe Coded: Yes
+
 Age: ~3 Months old Project (as of June 5, 2026)
+
 Foundation: 17/03/2026
 
 This project is based on a Web OS, which means you can download it and launch it on just come clicks!
